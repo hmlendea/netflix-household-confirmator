@@ -6,6 +6,6 @@ namespace NetflixHouseholdConfirmator.Service
 
         void LogOut();
 
-        bool HasPendingConfirmations();
+        void ConfirmHousehold();
     }
 }

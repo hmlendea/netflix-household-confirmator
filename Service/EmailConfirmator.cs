@@ -8,6 +8,7 @@ using NuciLog.Core;
 
 using NetflixHouseholdConfirmator.Configuration;
 using NetflixHouseholdConfirmator.Logging;
+using System.Text.RegularExpressions;
 
 namespace NetflixHouseholdConfirmator.Service
 {
@@ -76,7 +77,7 @@ namespace NetflixHouseholdConfirmator.Service
                 new LogInfo(MyLogInfoKey.Username, imapSettings.Username));
         }
 
-        public bool HasPendingConfirmations()
+        public void ConfirmHousehold()
         {
             IEnumerable<MimeMessage> emails = RetrieveRecentEmails();
 
@@ -84,11 +85,20 @@ namespace NetflixHouseholdConfirmator.Service
             {
                 if (email.Subject.Contains("How to update your Netflix Household"))
                 {
-                    return true;
+                    ConfirmEmail(email);
+                    break;
                 }
             }
+        }
 
-            return false;
+        private void ConfirmEmail(MimeMessage email)
+        {
+            string confirmationUrl = Regex.Replace(
+                email.HtmlBody.Replace(Environment.NewLine, string.Empty),
+                ".*(https:\\/\\/[^ ]*UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA).*",
+                "$1");
+
+            Console.WriteLine(confirmationUrl);
         }
 
         private IEnumerable<MimeMessage> RetrieveRecentEmails()

@@ -56,9 +56,9 @@ namespace NetflixHouseholdConfirmator
 
             emailConfirmator.LogIn();
 
-            if (emailConfirmator.HasPendingConfirmations())
+            while(true)
             {
-                Console.WriteLine("GOT MESSAGE");
+                emailConfirmator.ConfirmHousehold();
             }
 
             emailConfirmator.LogOut();
