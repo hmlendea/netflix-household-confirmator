@@ -12,21 +12,13 @@ using System.Text.RegularExpressions;
 
 namespace NetflixHouseholdConfirmator.Service
 {
-    public sealed class EmailConfirmator : IEmailConfirmator
+    public sealed class EmailConfirmator(
+        ImapSettings imapSettings,
+        ILogger logger) : IEmailConfirmator
     {
-        readonly ImapSettings imapSettings;
-        readonly ILogger logger;
-        readonly ImapClient imapClient;
-
-        public EmailConfirmator(
-            ImapSettings imapSettings,
-            ILogger logger)
-        {
-            this.imapSettings = imapSettings;
-            imapClient = new ImapClient();
-
-            this.logger = logger;
-        }
+        readonly ImapSettings imapSettings = imapSettings;
+        readonly ILogger logger = logger;
+        readonly ImapClient imapClient = new();
 
         public void LogIn()
         {
@@ -77,7 +69,7 @@ namespace NetflixHouseholdConfirmator.Service
                 new LogInfo(MyLogInfoKey.Username, imapSettings.Username));
         }
 
-        public void ConfirmHousehold()
+        public string GetHouseholdConfirmationUrl()
         {
             IEnumerable<MimeMessage> emails = RetrieveRecentEmails();
 
@@ -85,21 +77,18 @@ namespace NetflixHouseholdConfirmator.Service
             {
                 if (email.Subject.Contains("How to update your Netflix Household"))
                 {
-                    ConfirmEmail(email);
-                    break;
+                    return ExtractConfirmationUrlFromEmail(email);
                 }
             }
+
+            return null;
         }
 
-        private void ConfirmEmail(MimeMessage email)
-        {
-            string confirmationUrl = Regex.Replace(
+        private string ExtractConfirmationUrlFromEmail(MimeMessage email)
+        => Regex.Replace(
                 email.HtmlBody.Replace(Environment.NewLine, string.Empty),
                 ".*(https:\\/\\/[^ ]*UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA).*",
                 "$1");
-
-            Console.WriteLine(confirmationUrl);
-        }
 
         private IEnumerable<MimeMessage> RetrieveRecentEmails()
         {

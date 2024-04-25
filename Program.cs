@@ -9,6 +9,10 @@ using NuciLog.Core;
 
 using NetflixHouseholdConfirmator.Configuration;
 using NetflixHouseholdConfirmator.Service;
+using OpenQA.Selenium;
+using NuciWeb;
+using System.IO;
+using NetflixHouseholdConfirmator.Service.Processors;
 
 namespace NetflixHouseholdConfirmator
 {
@@ -19,6 +23,7 @@ namespace NetflixHouseholdConfirmator
         static ImapSettings imapSettings;
         static NuciLoggerSettings loggerSettings;
 
+        static IWebDriver webDriver;
         static ILogger logger;
 
         static IServiceProvider serviceProvider;
@@ -26,6 +31,7 @@ namespace NetflixHouseholdConfirmator
         static void Main(string[] args)
         {
             LoadConfiguration();
+            webDriver = WebDriverInitialiser.InitialiseAvailableWebDriver(debugSettings.IsDebugMode, botSettings.PageLoadTimeout);
 
             serviceProvider = CreateIOC();
             logger = serviceProvider.GetService<ILogger>();
@@ -39,29 +45,39 @@ namespace NetflixHouseholdConfirmator
             catch (AggregateException ex)
             {
                 LogInnerExceptions(ex);
+                SaveCrashScreenshot();
             }
             catch (Exception ex)
             {
                 logger.Fatal(Operation.Unknown, OperationStatus.Failure, ex);
+                SaveCrashScreenshot();
             }
             finally
             {
+                webDriver?.Quit();
+
                 logger.Info(Operation.ShutDown, "Application stopped");
             }
         }
 
         static void RunApplication()
         {
-            IEmailConfirmator emailConfirmator = serviceProvider.GetService<IEmailConfirmator>();
+            IEmailConfirmator email = serviceProvider.GetService<IEmailConfirmator>();
+            INetflixProcessor netflix = serviceProvider.GetService<INetflixProcessor>();
 
-            emailConfirmator.LogIn();
+            email.LogIn();
 
             while(true)
             {
-                emailConfirmator.ConfirmHousehold();
+                string confirmationUrl = email.GetHouseholdConfirmationUrl();
+
+                if (confirmationUrl is not null)
+                {
+                    netflix.ConfirmHousehold(confirmationUrl);
+                }
             }
 
-            emailConfirmator.LogOut();
+            email.LogOut();
         }
 
         static IConfiguration LoadConfiguration()
@@ -92,6 +108,9 @@ namespace NetflixHouseholdConfirmator
                 .AddSingleton(loggerSettings)
                 .AddSingleton<IEmailConfirmator, EmailConfirmator>()
                 .AddSingleton<ILogger, NuciLogger>()
+                .AddSingleton<IWebDriver>(s => webDriver)
+                .AddSingleton<IWebProcessor, WebProcessor>()
+                .AddSingleton<INetflixProcessor, NetflixProcessor>()
                 .BuildServiceProvider();
         }
 
@@ -110,6 +129,21 @@ namespace NetflixHouseholdConfirmator
                     LogInnerExceptions(innerException as AggregateException);
                 }
             }
+        }
+
+        static void SaveCrashScreenshot()
+        {
+            if (!debugSettings.IsCrashScreenshotEnabled)
+            {
+                return;
+            }
+
+            string directory = Path.GetDirectoryName(loggerSettings.LogFilePath);
+            string filePath = Path.Combine(directory, debugSettings.CrashScreenshotFileName);
+
+            ((ITakesScreenshot)webDriver)
+                .GetScreenshot()
+                .SaveAsFile(filePath);
         }
     }
 }

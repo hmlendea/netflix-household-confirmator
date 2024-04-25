@@ -6,6 +6,6 @@ namespace NetflixHouseholdConfirmator.Service
 
         void LogOut();
 
-        void ConfirmHousehold();
+        string GetHouseholdConfirmationUrl();
     }
 }
