@@ -1,18 +1,18 @@
 ﻿using System;
+using System.IO;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using NetflixHouseholdConfirmator.Configuration;
+using NetflixHouseholdConfirmator.Service;
+using NetflixHouseholdConfirmator.Service.Processors;
+
+using OpenQA.Selenium;
 using NuciLog;
 using NuciLog.Configuration;
 using NuciLog.Core;
-
-using NetflixHouseholdConfirmator.Configuration;
-using NetflixHouseholdConfirmator.Service;
-using OpenQA.Selenium;
 using NuciWeb;
-using System.IO;
-using NetflixHouseholdConfirmator.Service.Processors;
 
 namespace NetflixHouseholdConfirmator
 {
