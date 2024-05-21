@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 using MailKit;
 using MailKit.Net.Imap;
@@ -8,7 +9,6 @@ using NuciLog.Core;
 
 using NetflixHouseholdConfirmator.Configuration;
 using NetflixHouseholdConfirmator.Logging;
-using System.Text.RegularExpressions;
 
 namespace NetflixHouseholdConfirmator.Service
 {
@@ -19,6 +19,8 @@ namespace NetflixHouseholdConfirmator.Service
         readonly ImapSettings imapSettings = imapSettings;
         readonly ILogger logger = logger;
         readonly ImapClient imapClient = new();
+
+        DateTime lastConfirmationEmailDateTime = DateTime.Now;
 
         public void LogIn()
         {
@@ -77,7 +79,13 @@ namespace NetflixHouseholdConfirmator.Service
             {
                 if (email.Subject.Contains("How to update your Netflix Household"))
                 {
-                    return ExtractConfirmationUrlFromEmail(email);
+                    DateTime emailDateTime = DateTime.Parse(email.Headers["DateReceived"]);
+
+                    if (emailDateTime > lastConfirmationEmailDateTime)
+                    {
+                        lastConfirmationEmailDateTime = emailDateTime;
+                        return ExtractConfirmationUrlFromEmail(email);
+                    }
                 }
             }
 
