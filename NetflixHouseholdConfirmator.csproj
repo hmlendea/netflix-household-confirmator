@@ -15,7 +15,9 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="NuciLog" Version="1.1.0.1" />
-    <PackageReference Include="NuciWeb" Version="2.2.4" />
+    <PackageReference Include="NuciWeb" Version="4.0.0" />
+    <PackageReference Include="NuciWeb.Automation" Version="1.0.0" />
+    <PackageReference Include="NuciWeb.Automation.Selenium" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>
