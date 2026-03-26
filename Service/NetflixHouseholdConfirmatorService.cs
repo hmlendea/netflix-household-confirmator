@@ -1,15 +1,24 @@
+using System;
+using NetflixHouseholdConfirmator.Logging;
 using NetflixHouseholdConfirmator.Service.Processors;
+using NuciLog.Core;
 
 namespace NetflixHouseholdConfirmator.Service
 {
     public class NetflixHouseholdConfirmatorService(
         IEmailProcessor emailProcessor,
-        INetflixProcessor netflixProcessor)
+        INetflixProcessor netflixProcessor,
+        ILogger logger)
         : INetflixHouseholdConfirmatorService
     {
         public string ConfirmIncomingHouseholdUpdateRequests()
         {
             emailProcessor.LogIn();
+
+            logger.Info(
+                MyOperation.ListenForConfirmationRequests,
+                OperationStatus.Started,
+                "Listening for incoming household update requests.");
 
             try
             {
@@ -22,6 +31,15 @@ namespace NetflixHouseholdConfirmator.Service
                         netflixProcessor.ConfirmHousehold(confirmationUrl);
                     }
                 }
+            }
+            catch (Exception exception)
+            {
+                logger.Error(
+                    MyOperation.ListenForConfirmationRequests,
+                    OperationStatus.Failure,
+                    exception);
+
+                throw;
             }
             finally
             {

@@ -15,5 +15,7 @@ namespace NetflixHouseholdConfirmator.Logging
         public static Operation EmailLogOut => new MyOperation(nameof(EmailLogOut));
 
         public static Operation HouseholdConfirmation => new MyOperation(nameof(HouseholdConfirmation));
+
+        public static Operation ListenForConfirmationRequests => new MyOperation(nameof(ListenForConfirmationRequests));
     }
 }
