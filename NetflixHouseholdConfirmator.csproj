@@ -8,13 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKit" Version="4.5.0" />
+    <PackageReference Include="MailKit" Version="4.15.1" />
     <PackageReference Include="MailKit.Net" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-    <PackageReference Include="NuciLog" Version="1.1.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
+    <PackageReference Include="NuciLog" Version="1.1.2" />
+    <PackageReference Include="NuciLog.Core" Version="2.6.0" />
     <PackageReference Include="NuciWeb" Version="4.0.0" />
     <PackageReference Include="NuciWeb.Automation" Version="1.0.0" />
     <PackageReference Include="NuciWeb.Automation.Selenium" Version="1.0.1" />
