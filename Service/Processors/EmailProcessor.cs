@@ -100,21 +100,8 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 
         private IEnumerable<MimeMessage> RetrieveRecentEmails()
         {
-            logger.Debug(
-                MyOperation.RetrieveRecentEmails,
-                OperationStatus.Started,
-                "Retrieving the recent emails",
-                new LogInfo(MyLogInfoKey.MaxAge, imapSettings.MaxEmailAge));
-
             var inbox = imapClient.Inbox;
             inbox.Open(FolderAccess.ReadOnly);
-
-            logger.Debug(
-                MyOperation.RetrieveRecentEmails,
-                OperationStatus.InProgress,
-                "Filtering recent emails from the inbox",
-                new LogInfo(MyLogInfoKey.EmailsCount, inbox.Count),
-                new LogInfo(MyLogInfoKey.MaxAge, imapSettings.MaxEmailAge));
 
             IList<MimeMessage> emails = [];
 
@@ -129,12 +116,6 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 
                 emails.Add(email);
             }
-
-            logger.Info(
-                MyOperation.RetrieveRecentEmails,
-                OperationStatus.Success,
-                "Retrieved the recent emails",
-                new LogInfo(MyLogInfoKey.EmailsCount, emails.Count));
 
             return emails;
         }
