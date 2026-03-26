@@ -19,7 +19,5 @@ namespace NetflixHouseholdConfirmator.Logging
         public static LogInfoKey Password => new MyLogInfoKey(nameof(Password));
 
         public static LogInfoKey MaxAge => new MyLogInfoKey(nameof(MaxAge));
-
-        public static LogInfoKey EmailsCount => new MyLogInfoKey(nameof(EmailsCount));
     }
 }

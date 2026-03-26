@@ -36,9 +36,9 @@ namespace NetflixHouseholdConfirmator
 
             serviceProvider = CreateIOC();
             logger = serviceProvider.GetService<ILogger>();
-            INetflixHouseholdConfirmatorService service = serviceProvider.GetService<INetflixHouseholdConfirmatorService>();
+            IHouseholdConfirmator service = serviceProvider.GetService<IHouseholdConfirmator>();
 
-            logger.Info(Operation.StartUp, "Application started");
+            logger.Info(Operation.StartUp, "The service has started.");
 
             try
             {
@@ -58,7 +58,7 @@ namespace NetflixHouseholdConfirmator
             {
                 webDriver?.Quit();
 
-                logger.Info(Operation.ShutDown, "Application stopped");
+                logger.Info(Operation.ShutDown, "The service has stopped.");
             }
         }
 
@@ -93,7 +93,7 @@ namespace NetflixHouseholdConfirmator
                 .AddSingleton<IWebDriver>(s => webDriver)
                 .AddSingleton<IWebProcessor, SeleniumWebProcessor>()
                 .AddSingleton<INetflixProcessor, NetflixProcessor>()
-                .AddSingleton<INetflixHouseholdConfirmatorService, NetflixHouseholdConfirmatorService>()
+                .AddSingleton<IHouseholdConfirmator, HouseholdConfirmator>()
                 .BuildServiceProvider();
         }
 

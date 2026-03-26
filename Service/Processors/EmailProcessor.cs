@@ -9,6 +9,7 @@ using NuciLog.Core;
 
 using NetflixHouseholdConfirmator.Configuration;
 using NetflixHouseholdConfirmator.Logging;
+using System.Linq;
 
 namespace NetflixHouseholdConfirmator.Service.Processors
 {
@@ -24,51 +25,103 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 
         public void LogIn()
         {
-            logger.Debug(
-                MyOperation.LogIn,
-                OperationStatus.Started,
-                "Connecting to the IMAP server",
-                new LogInfo(MyLogInfoKey.Server, imapSettings.Server),
-                new LogInfo(MyLogInfoKey.Port, imapSettings.Port));
-
-            imapClient.Connect(imapSettings.Server, imapSettings.Port, true);
-
-            logger.Debug(
-                MyOperation.LogIn,
-                OperationStatus.InProgress,
-                "Authenticating on the IMAP server",
-                new LogInfo(MyLogInfoKey.Username, imapSettings.Username));
-
-            imapClient.Authenticate(imapSettings.Username, imapSettings.Password);
+            IEnumerable<LogInfo> logInfos =
+            [
+                new(MyLogInfoKey.Server, imapSettings.Server),
+                new(MyLogInfoKey.Port, imapSettings.Port)
+            ];
 
             logger.Info(
-                MyOperation.LogIn,
+                MyOperation.EmailLogIn,
+                OperationStatus.Started,
+                "Connecting to the IMAP server.",
+                logInfos);
+
+            try
+            {
+                imapClient.Connect(imapSettings.Server, imapSettings.Port, true);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(
+                    MyOperation.EmailLogIn,
+                    OperationStatus.Failure,
+                    "Failed to connect to the IMAP server.",
+                    ex,
+                    logInfos);
+
+                throw;
+            }
+
+            logInfos = logInfos.Append(new(MyLogInfoKey.Username, imapSettings.Username));
+
+            logger.Info(
+                MyOperation.EmailLogIn,
+                OperationStatus.InProgress,
+                "Authenticating on the IMAP server.",
+                logInfos);
+
+            try
+            {
+                imapClient.Authenticate(imapSettings.Username, imapSettings.Password);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(
+                    MyOperation.EmailLogIn,
+                    OperationStatus.Failure,
+                    "Failed to authenticate on the IMAP server.",
+                    ex,
+                    logInfos);
+
+                throw;
+            }
+
+            logger.Info(
+                MyOperation.EmailLogIn,
                 OperationStatus.Success,
-                "Logged into the IMAP server",
-                new LogInfo(MyLogInfoKey.Server, imapSettings.Server),
-                new LogInfo(MyLogInfoKey.Port, imapSettings.Port),
-                new LogInfo(MyLogInfoKey.Username, imapSettings.Username));
+                "Logged into the IMAP server.",
+                logInfos);
         }
 
         public void LogOut()
         {
-            logger.Debug(
-                MyOperation.LogOut,
-                OperationStatus.Started,
-                "Disconnecting from the IMAP server",
-                new LogInfo(MyLogInfoKey.Server, imapSettings.Server),
-                new LogInfo(MyLogInfoKey.Port, imapSettings.Port));
+            IEnumerable<LogInfo> logInfos =
+            [
+                new(MyLogInfoKey.Server, imapSettings.Server),
+                new(MyLogInfoKey.Port, imapSettings.Port),
+                new(MyLogInfoKey.Username, imapSettings.Username)
+            ];
 
-            imapClient.Disconnect(true);
+            logger.Info(
+                MyOperation.EmailLogOut,
+                OperationStatus.Started,
+                "Disconnecting from the IMAP server.",
+                logInfos);
+
+            try
+            {
+                imapClient.Disconnect(true);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(
+                    MyOperation.EmailLogOut,
+                    OperationStatus.Failure,
+                    "Failed to disconnect from the IMAP server.",
+                    ex,
+                    logInfos);
+
+                throw;
+            }
+
             imapClient.Dispose();
 
             logger.Info(
-                MyOperation.LogOut,
+                MyOperation.EmailLogOut,
                 OperationStatus.Success,
-                "Logged out of the IMAP server",
-                new LogInfo(MyLogInfoKey.Server, imapSettings.Server),
-                new LogInfo(MyLogInfoKey.Port, imapSettings.Port),
-                new LogInfo(MyLogInfoKey.Username, imapSettings.Username));
+                "Logged out of the IMAP server.",
+                logInfos);
         }
 
         public string GetHouseholdConfirmationUrl()
@@ -100,21 +153,8 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 
         private IEnumerable<MimeMessage> RetrieveRecentEmails()
         {
-            logger.Debug(
-                MyOperation.RetrieveRecentEmails,
-                OperationStatus.Started,
-                "Retrieving the recent emails",
-                new LogInfo(MyLogInfoKey.MaxAge, imapSettings.MaxEmailAge));
-
             var inbox = imapClient.Inbox;
             inbox.Open(FolderAccess.ReadOnly);
-
-            logger.Debug(
-                MyOperation.RetrieveRecentEmails,
-                OperationStatus.InProgress,
-                "Filtering recent emails from the inbox",
-                new LogInfo(MyLogInfoKey.EmailsCount, inbox.Count),
-                new LogInfo(MyLogInfoKey.MaxAge, imapSettings.MaxEmailAge));
 
             IList<MimeMessage> emails = [];
 
@@ -129,12 +169,6 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 
                 emails.Add(email);
             }
-
-            logger.Info(
-                MyOperation.RetrieveRecentEmails,
-                OperationStatus.Success,
-                "Retrieved the recent emails",
-                new LogInfo(MyLogInfoKey.EmailsCount, emails.Count));
 
             return emails;
         }
