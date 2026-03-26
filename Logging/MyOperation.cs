@@ -13,5 +13,7 @@ namespace NetflixHouseholdConfirmator.Logging
         public static Operation EmailLogIn => new MyOperation(nameof(EmailLogIn));
 
         public static Operation EmailLogOut => new MyOperation(nameof(EmailLogOut));
+
+        public static Operation HouseholdConfirmation => new MyOperation(nameof(HouseholdConfirmation));
     }
 }
