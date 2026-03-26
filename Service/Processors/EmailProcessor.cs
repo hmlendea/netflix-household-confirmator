@@ -9,6 +9,7 @@ using NuciLog.Core;
 
 using NetflixHouseholdConfirmator.Configuration;
 using NetflixHouseholdConfirmator.Logging;
+using System.Linq;
 
 namespace NetflixHouseholdConfirmator.Service.Processors
 {
@@ -24,30 +25,63 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 
         public void LogIn()
         {
-            logger.Debug(
+            IEnumerable<LogInfo> logInfos =
+            [
+                new(MyLogInfoKey.Server, imapSettings.Server),
+                new(MyLogInfoKey.Port, imapSettings.Port)
+            ];
+
+            logger.Info(
                 MyOperation.LogIn,
                 OperationStatus.Started,
-                "Connecting to the IMAP server",
-                new LogInfo(MyLogInfoKey.Server, imapSettings.Server),
-                new LogInfo(MyLogInfoKey.Port, imapSettings.Port));
+                "Connecting to the IMAP server.",
+                logInfos);
 
-            imapClient.Connect(imapSettings.Server, imapSettings.Port, true);
+            try
+            {
+                imapClient.Connect(imapSettings.Server, imapSettings.Port, true);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(
+                    MyOperation.LogIn,
+                    OperationStatus.Failure,
+                    "Failed to connect to the IMAP server.",
+                    ex,
+                    logInfos);
 
-            logger.Debug(
+                throw;
+            }
+
+            logInfos = logInfos.Append(new(MyLogInfoKey.Username, imapSettings.Username));
+
+            logger.Info(
                 MyOperation.LogIn,
                 OperationStatus.InProgress,
-                "Authenticating on the IMAP server",
-                new LogInfo(MyLogInfoKey.Username, imapSettings.Username));
+                "Authenticating on the IMAP server.",
+                logInfos);
 
-            imapClient.Authenticate(imapSettings.Username, imapSettings.Password);
+            try
+            {
+                imapClient.Authenticate(imapSettings.Username, imapSettings.Password);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(
+                    MyOperation.LogIn,
+                    OperationStatus.Failure,
+                    "Failed to authenticate on the IMAP server.",
+                    ex,
+                    logInfos);
+
+                throw;
+            }
 
             logger.Info(
                 MyOperation.LogIn,
                 OperationStatus.Success,
-                "Logged into the IMAP server",
-                new LogInfo(MyLogInfoKey.Server, imapSettings.Server),
-                new LogInfo(MyLogInfoKey.Port, imapSettings.Port),
-                new LogInfo(MyLogInfoKey.Username, imapSettings.Username));
+                "Logged into the IMAP server.",
+                logInfos);
         }
 
         public void LogOut()
