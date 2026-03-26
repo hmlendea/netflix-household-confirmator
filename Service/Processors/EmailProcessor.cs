@@ -10,11 +10,11 @@ using NuciLog.Core;
 using NetflixHouseholdConfirmator.Configuration;
 using NetflixHouseholdConfirmator.Logging;
 
-namespace NetflixHouseholdConfirmator.Service
+namespace NetflixHouseholdConfirmator.Service.Processors
 {
-    public sealed class EmailConfirmator(
+    public sealed class EmailProcessor(
         ImapSettings imapSettings,
-        ILogger logger) : IEmailConfirmator
+        ILogger logger) : IEmailProcessor
     {
         readonly ImapSettings imapSettings = imapSettings;
         readonly ILogger logger = logger;

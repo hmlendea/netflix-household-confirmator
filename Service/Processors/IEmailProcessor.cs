@@ -1,6 +1,6 @@
-namespace NetflixHouseholdConfirmator.Service
+namespace NetflixHouseholdConfirmator.Service.Processors
 {
-    public interface IEmailConfirmator
+    public interface IEmailProcessor
     {
         void LogIn();
 

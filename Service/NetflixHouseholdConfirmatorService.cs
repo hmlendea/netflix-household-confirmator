@@ -3,7 +3,7 @@ using NetflixHouseholdConfirmator.Service.Processors;
 namespace NetflixHouseholdConfirmator.Service
 {
     public class NetflixHouseholdConfirmatorService(
-        IEmailConfirmator emailProcessor,
+        IEmailProcessor emailProcessor,
         INetflixProcessor netflixProcessor)
         : INetflixHouseholdConfirmatorService
     {

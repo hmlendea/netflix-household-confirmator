@@ -88,7 +88,7 @@ namespace NetflixHouseholdConfirmator
                 .AddSingleton(debugSettings)
                 .AddSingleton(imapSettings)
                 .AddSingleton(loggerSettings)
-                .AddSingleton<IEmailConfirmator, EmailConfirmator>()
+                .AddSingleton<IEmailProcessor, EmailProcessor>()
                 .AddSingleton<ILogger, NuciLogger>()
                 .AddSingleton<IWebDriver>(s => webDriver)
                 .AddSingleton<IWebProcessor, SeleniumWebProcessor>()
