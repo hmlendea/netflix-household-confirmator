@@ -11,14 +11,21 @@ namespace NetflixHouseholdConfirmator.Service
         {
             emailProcessor.LogIn();
 
-            while(true)
+            try
             {
-                string confirmationUrl = emailProcessor.GetHouseholdConfirmationUrl();
-
-                if (confirmationUrl is not null)
+                while(true)
                 {
-                    netflixProcessor.ConfirmHousehold(confirmationUrl);
+                    string confirmationUrl = emailProcessor.GetHouseholdConfirmationUrl();
+
+                    if (confirmationUrl is not null)
+                    {
+                        netflixProcessor.ConfirmHousehold(confirmationUrl);
+                    }
                 }
+            }
+            finally
+            {
+                emailProcessor.LogOut();
             }
         }
     }
