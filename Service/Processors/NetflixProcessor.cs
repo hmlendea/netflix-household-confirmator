@@ -3,15 +3,8 @@ using NuciWeb.Automation;
 
 namespace NetflixHouseholdConfirmator.Service.Processors
 {
-    public sealed class NetflixProcessor : INetflixProcessor
+    public sealed class NetflixProcessor(IWebProcessor webProcessor) : INetflixProcessor
     {
-        readonly IWebProcessor webProcessor;
-
-        public NetflixProcessor(IWebProcessor webProcessor)
-        {
-            this.webProcessor = webProcessor;
-        }
-
         public void ConfirmHousehold(string confirmationUrl)
         {
             webProcessor.GoToUrl(confirmationUrl);
@@ -23,7 +16,6 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 
             if (webProcessor.IsElementVisible(locationDetailsSelector))
             {
-                // The household is already confirmed, no action needed
                 return;
             }
 
