@@ -101,15 +101,13 @@ namespace NetflixHouseholdConfirmator
         {
             foreach (Exception innerException in exception.InnerExceptions)
             {
-                AggregateException innerAggregateException = innerException as AggregateException;
-
-                if (innerAggregateException is null)
+                if (innerException is not AggregateException innerAggregateException)
                 {
                     logger.Fatal(Operation.Unknown, OperationStatus.Failure, innerException);
                 }
                 else
                 {
-                    LogInnerExceptions(innerException as AggregateException);
+                    LogInnerExceptions(innerAggregateException);
                 }
             }
         }
