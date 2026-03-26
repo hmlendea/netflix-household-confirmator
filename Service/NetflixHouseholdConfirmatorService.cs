@@ -11,7 +11,7 @@ namespace NetflixHouseholdConfirmator.Service
         ILogger logger)
         : INetflixHouseholdConfirmatorService
     {
-        public string ConfirmIncomingHouseholdUpdateRequests()
+        public void ConfirmIncomingHouseholdUpdateRequests()
         {
             emailProcessor.LogIn();
 
