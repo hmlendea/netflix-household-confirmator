@@ -86,23 +86,42 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 
         public void LogOut()
         {
-            logger.Debug(
+            IEnumerable<LogInfo> logInfos =
+            [
+                new(MyLogInfoKey.Server, imapSettings.Server),
+                new(MyLogInfoKey.Port, imapSettings.Port),
+                new(MyLogInfoKey.Username, imapSettings.Username)
+            ];
+
+            logger.Info(
                 MyOperation.LogOut,
                 OperationStatus.Started,
-                "Disconnecting from the IMAP server",
-                new LogInfo(MyLogInfoKey.Server, imapSettings.Server),
-                new LogInfo(MyLogInfoKey.Port, imapSettings.Port));
+                "Disconnecting from the IMAP server.",
+                logInfos);
 
-            imapClient.Disconnect(true);
+            try
+            {
+                imapClient.Disconnect(true);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(
+                    MyOperation.LogOut,
+                    OperationStatus.Failure,
+                    "Failed to disconnect from the IMAP server.",
+                    ex,
+                    logInfos);
+
+                throw;
+            }
+
             imapClient.Dispose();
 
             logger.Info(
                 MyOperation.LogOut,
                 OperationStatus.Success,
-                "Logged out of the IMAP server",
-                new LogInfo(MyLogInfoKey.Server, imapSettings.Server),
-                new LogInfo(MyLogInfoKey.Port, imapSettings.Port),
-                new LogInfo(MyLogInfoKey.Username, imapSettings.Username));
+                "Logged out of the IMAP server.",
+                logInfos);
         }
 
         public string GetHouseholdConfirmationUrl()
