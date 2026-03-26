@@ -36,12 +36,13 @@ namespace NetflixHouseholdConfirmator
 
             serviceProvider = CreateIOC();
             logger = serviceProvider.GetService<ILogger>();
+            INetflixHouseholdConfirmatorService service = serviceProvider.GetService<INetflixHouseholdConfirmatorService>();
 
             logger.Info(Operation.StartUp, "Application started");
 
             try
             {
-                RunApplication();
+                service.ConfirmIncomingHouseholdUpdateRequests();
             }
             catch (AggregateException ex)
             {
@@ -59,26 +60,6 @@ namespace NetflixHouseholdConfirmator
 
                 logger.Info(Operation.ShutDown, "Application stopped");
             }
-        }
-
-        static void RunApplication()
-        {
-            IEmailConfirmator email = serviceProvider.GetService<IEmailConfirmator>();
-            INetflixProcessor netflix = serviceProvider.GetService<INetflixProcessor>();
-
-            email.LogIn();
-
-            while(true)
-            {
-                string confirmationUrl = email.GetHouseholdConfirmationUrl();
-
-                if (confirmationUrl is not null)
-                {
-                    netflix.ConfirmHousehold(confirmationUrl);
-                }
-            }
-
-            email.LogOut();
         }
 
         static IConfiguration LoadConfiguration()
@@ -112,6 +93,7 @@ namespace NetflixHouseholdConfirmator
                 .AddSingleton<IWebDriver>(s => webDriver)
                 .AddSingleton<IWebProcessor, SeleniumWebProcessor>()
                 .AddSingleton<INetflixProcessor, NetflixProcessor>()
+                .AddSingleton<INetflixHouseholdConfirmatorService, NetflixHouseholdConfirmatorService>()
                 .BuildServiceProvider();
         }
 
