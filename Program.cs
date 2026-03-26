@@ -36,7 +36,7 @@ namespace NetflixHouseholdConfirmator
 
             serviceProvider = CreateIOC();
             logger = serviceProvider.GetService<ILogger>();
-            INetflixHouseholdConfirmatorService service = serviceProvider.GetService<INetflixHouseholdConfirmatorService>();
+            IHouseholdConfirmator service = serviceProvider.GetService<IHouseholdConfirmator>();
 
             logger.Info(Operation.StartUp, "The service has started.");
 
@@ -93,7 +93,7 @@ namespace NetflixHouseholdConfirmator
                 .AddSingleton<IWebDriver>(s => webDriver)
                 .AddSingleton<IWebProcessor, SeleniumWebProcessor>()
                 .AddSingleton<INetflixProcessor, NetflixProcessor>()
-                .AddSingleton<INetflixHouseholdConfirmatorService, NetflixHouseholdConfirmatorService>()
+                .AddSingleton<IHouseholdConfirmator, HouseholdConfirmator>()
                 .BuildServiceProvider();
         }
 

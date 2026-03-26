@@ -1,6 +1,6 @@
 namespace NetflixHouseholdConfirmator.Service
 {
-    public interface INetflixHouseholdConfirmatorService
+    public interface IHouseholdConfirmator
     {
         void ConfirmIncomingHouseholdUpdateRequests();
     }

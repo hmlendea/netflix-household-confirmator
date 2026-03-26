@@ -5,11 +5,11 @@ using NuciLog.Core;
 
 namespace NetflixHouseholdConfirmator.Service
 {
-    public class NetflixHouseholdConfirmatorService(
+    public class HouseholdConfirmator(
         IEmailProcessor emailProcessor,
         INetflixProcessor netflixProcessor,
         ILogger logger)
-        : INetflixHouseholdConfirmatorService
+        : IHouseholdConfirmator
     {
         public void ConfirmIncomingHouseholdUpdateRequests()
         {
