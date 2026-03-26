@@ -38,7 +38,7 @@ namespace NetflixHouseholdConfirmator
             logger = serviceProvider.GetService<ILogger>();
             INetflixHouseholdConfirmatorService service = serviceProvider.GetService<INetflixHouseholdConfirmatorService>();
 
-            logger.Info(Operation.StartUp, "Application started");
+            logger.Info(Operation.StartUp, "The service has started.");
 
             try
             {
@@ -58,7 +58,7 @@ namespace NetflixHouseholdConfirmator
             {
                 webDriver?.Quit();
 
-                logger.Info(Operation.ShutDown, "Application stopped");
+                logger.Info(Operation.ShutDown, "The service has stopped.");
             }
         }
 
