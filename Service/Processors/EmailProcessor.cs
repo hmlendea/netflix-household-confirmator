@@ -32,7 +32,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             ];
 
             logger.Info(
-                MyOperation.LogIn,
+                MyOperation.EmailLogIn,
                 OperationStatus.Started,
                 "Connecting to the IMAP server.",
                 logInfos);
@@ -44,7 +44,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             catch (Exception ex)
             {
                 logger.Error(
-                    MyOperation.LogIn,
+                    MyOperation.EmailLogIn,
                     OperationStatus.Failure,
                     "Failed to connect to the IMAP server.",
                     ex,
@@ -56,7 +56,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             logInfos = logInfos.Append(new(MyLogInfoKey.Username, imapSettings.Username));
 
             logger.Info(
-                MyOperation.LogIn,
+                MyOperation.EmailLogIn,
                 OperationStatus.InProgress,
                 "Authenticating on the IMAP server.",
                 logInfos);
@@ -68,7 +68,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             catch (Exception ex)
             {
                 logger.Error(
-                    MyOperation.LogIn,
+                    MyOperation.EmailLogIn,
                     OperationStatus.Failure,
                     "Failed to authenticate on the IMAP server.",
                     ex,
@@ -78,7 +78,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             }
 
             logger.Info(
-                MyOperation.LogIn,
+                MyOperation.EmailLogIn,
                 OperationStatus.Success,
                 "Logged into the IMAP server.",
                 logInfos);
@@ -94,7 +94,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             ];
 
             logger.Info(
-                MyOperation.LogOut,
+                MyOperation.EmailLogOut,
                 OperationStatus.Started,
                 "Disconnecting from the IMAP server.",
                 logInfos);
@@ -106,7 +106,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             catch (Exception ex)
             {
                 logger.Error(
-                    MyOperation.LogOut,
+                    MyOperation.EmailLogOut,
                     OperationStatus.Failure,
                     "Failed to disconnect from the IMAP server.",
                     ex,
@@ -118,7 +118,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             imapClient.Dispose();
 
             logger.Info(
-                MyOperation.LogOut,
+                MyOperation.EmailLogOut,
                 OperationStatus.Success,
                 "Logged out of the IMAP server.",
                 logInfos);
