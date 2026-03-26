@@ -1,5 +1,5 @@
 using NuciWeb;
-using OpenQA.Selenium;
+using NuciWeb.Automation;
 
 namespace NetflixHouseholdConfirmator.Service.Processors
 {
@@ -16,7 +16,16 @@ namespace NetflixHouseholdConfirmator.Service.Processors
         {
             webProcessor.GoToUrl(confirmationUrl);
 
-            By confirmButtonSelector = By.XPath(@"//button[@data-uia='set-primary-location-action']");
+            string confirmButtonSelector = Select.ByXPath(@"//button[@data-uia='set-primary-location-action']");
+            string locationDetailsSelector = Select.ByXPath(@"//div[@data-uia='location-details']");
+
+            webProcessor.WaitForAnyElementToBeVisible(confirmButtonSelector, locationDetailsSelector);
+
+            if (webProcessor.IsElementVisible(locationDetailsSelector))
+            {
+                // The household is already confirmed, no action needed
+                return;
+            }
 
             webProcessor.Click(confirmButtonSelector);
         }

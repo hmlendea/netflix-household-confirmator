@@ -12,7 +12,8 @@ using OpenQA.Selenium;
 using NuciLog;
 using NuciLog.Configuration;
 using NuciLog.Core;
-using NuciWeb;
+using NuciWeb.Automation.Selenium;
+using NuciWeb.Automation;
 
 namespace NetflixHouseholdConfirmator
 {
@@ -109,7 +110,7 @@ namespace NetflixHouseholdConfirmator
                 .AddSingleton<IEmailConfirmator, EmailConfirmator>()
                 .AddSingleton<ILogger, NuciLogger>()
                 .AddSingleton<IWebDriver>(s => webDriver)
-                .AddSingleton<IWebProcessor, WebProcessor>()
+                .AddSingleton<IWebProcessor, SeleniumWebProcessor>()
                 .AddSingleton<INetflixProcessor, NetflixProcessor>()
                 .BuildServiceProvider();
         }
