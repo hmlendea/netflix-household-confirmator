@@ -17,6 +17,15 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             webProcessor.GoToUrl(confirmationUrl);
 
             string confirmButtonSelector = Select.ByXPath(@"//button[@data-uia='set-primary-location-action']");
+            string locationDetailsSelector = Select.ByXPath(@"//div[@data-uia='location-details']");
+
+            webProcessor.WaitForAnyElementToBeVisible(confirmButtonSelector, locationDetailsSelector);
+
+            if (webProcessor.IsElementVisible(locationDetailsSelector))
+            {
+                // The household is already confirmed, no action needed
+                return;
+            }
 
             webProcessor.Click(confirmButtonSelector);
         }
