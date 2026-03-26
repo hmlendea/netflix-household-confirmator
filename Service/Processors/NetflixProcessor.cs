@@ -39,6 +39,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
                     OperationStatus.Failure,
                     "An error has occurred while confirming the household.",
                     exception);
+            }
 
             logger.Info(
                 MyOperation.HouseholdConfirmation,
