@@ -6,3 +6,39 @@
 # About
 
 Tool to automatically confirm Netflix household update emails
+
+## Requirements
+
+- .NET target framework: `net10.0`
+- Firefox-based or Chromium-based web browser and driver
+
+## Development
+
+### Build
+
+```bash
+dotnet build
+```
+
+### Run
+
+```bash
+dotnet run
+```
+
+## Contributing
+
+Contributions are welcome.
+
+Please:
+
+- keep changes cross-platform
+- preserve public APIs unless the change is intentionally breaking
+- keep pull requests focused and consistent with existing style
+- update documentation when behaviour changes
+- add or update tests for new behaviour
+
+## License
+
+Licensed under the GNU General Public License v3.0 or later.
+See [LICENSE](./LICENSE) for details.
