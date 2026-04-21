@@ -121,8 +121,6 @@ This script downloads and executes an external release helper from: `https://raw
 
 **Note:** Piping into `bash` is an intensely controversial topic. Please review any external scripts before running them in your environment!
 
-### Release Script
-
 ## Contributing
 
 Contributions are welcome.
