@@ -31,9 +31,14 @@ Netflix Household Confirmator is a .NET console application that monitors an IMA
   - [Setup](#setup)
   - [Build](#build)
   - [Run](#run)
+  - [Test](#test)
+  - [Coverage](#coverage)
   - [Continuous Integration](#continuous-integration)
   - [Release](#release)
   - [Dependencies](#dependencies)
+- [Project Structure](#project-structure)
+  - [Projects and Packages](#projects-and-packages)
+  - [Directories](#directories)
 - [Contributing](#contributing)
 - [Project Engagement](#project-engagement)
 - [License](#license)
@@ -49,7 +54,7 @@ Netflix Household Confirmator is a .NET console application that monitors an IMA
 
 ## 🚀 Usage
 
-Complete the required values in `appsettings.json`, then start the executable from its extracted directory:
+Complete the required values in [appsettings.json](NetflixHouseholdConfirmator/appsettings.json), then start the executable from its extracted directory:
 
 ```bash
 ./NetflixHouseholdConfirmator
@@ -83,18 +88,18 @@ On Windows, execute `NetflixHouseholdConfirmator.exe`. The application continues
 1. Download the archive for your operating system and architecture from the [latest release](https://github.com/hmlendea/netflix-household-confirmator/releases/latest).
 2. Extract the archive to the desired directory.
 3. Ensure that a Selenium-compatible browser and corresponding WebDriver are available.
-4. Populate the required placeholders in `appsettings.json`.
+4. Populate the required placeholders in [appsettings.json](NetflixHouseholdConfirmator/appsettings.json).
 5. Launch the executable as described in [Usage](#usage).
 
 ## ⚙️ Configuration
 
-The application reads `appsettings.json` from its working directory during startup. Replace every IMAP placeholder before execution and retain the configuration file beside the executable.
+The application reads [appsettings.json](NetflixHouseholdConfirmator/appsettings.json) from its working directory during startup. Replace every IMAP placeholder before execution and retain the configuration file beside the executable.
 
 ### Configuration Files
 
 | File | Scope | Purpose |
 |------|-------|---------|
-| `appsettings.json` | Application installation | Configures browser automation, IMAP access, diagnostics, and logging |
+| [appsettings.json](NetflixHouseholdConfirmator/appsettings.json) | Application installation | Configures browser automation, IMAP access, diagnostics, and logging |
 
 ### Settings
 
@@ -115,11 +120,11 @@ The subsequent settings are recognised:
 
 ### Reload Behaviour
 
-Configuration values are bound during startup. Restart the application after modifying `appsettings.json`.
+Configuration values are bound during startup. Restart the application after modifying [appsettings.json](NetflixHouseholdConfirmator/appsettings.json).
 
 ### Secret Management
 
-The application reads the IMAP password directly from `appsettings.json`. Restrict access to this file, use a dedicated application password when the email provider supports one, and never commit genuine credentials.
+The application reads the IMAP password directly from [appsettings.json](NetflixHouseholdConfirmator/appsettings.json). Restrict access to this file, use a dedicated application password when the email provider supports one, and never commit genuine credentials.
 
 ## 🧩 Compatibility
 
@@ -140,13 +145,13 @@ The application reads the IMAP password directly from `appsettings.json`. Restri
 
 ## 🔐 Authentication and Authorisation
 
-The application authenticates to the configured IMAP server with the username and password from `appsettings.json`. It does not request Netflix account credentials; browser automation accesses the confirmation URL extracted from the email.
+The application authenticates to the configured IMAP server with the username and password from [appsettings.json](NetflixHouseholdConfirmator/appsettings.json). It does not request Netflix account credentials; browser automation accesses the confirmation URL extracted from the email.
 
 ## 🛡️ Privacy and Data
 
 | Data | Purpose | Storage | Retention | Optional |
 |------|---------|---------|-----------|----------|
-| IMAP username and password | Authenticates to the configured mailbox | `appsettings.json` and process memory | Until the configuration is modified and the process exits | No |
+| IMAP username and password | Authenticates to the configured mailbox | [appsettings.json](NetflixHouseholdConfirmator/appsettings.json) and process memory | Until the configuration is modified and the process exits | No |
 | Recent email content and confirmation URLs | Identifies and confirms household update requests | Process memory only | Current process session | No |
 | IMAP server, port, and username | Records connection diagnostics | Configured logger outputs | No application-level retention policy | No |
 | Crash screenshot | Captures browser state after an automation failure | Directory containing the configured log file | Until manually deleted | Yes |
@@ -157,7 +162,7 @@ The logger records the IMAP server, port, and username, but does not record the 
 
 | Platform or Scope | Location | Contents |
 |-------------------|----------|----------|
-| Application directory | `appsettings.json` | Runtime configuration and IMAP credentials |
+| Application directory | [appsettings.json](NetflixHouseholdConfirmator/appsettings.json) | Runtime configuration and IMAP credentials |
 | Configured logging destination | `nuciLoggerSettings.logFilePath` | Application logs when file output is active |
 | Configured logging directory | `debugSettings.crashScreenshotFileName` | Optional crash screenshot |
 
@@ -174,26 +179,42 @@ The logger records the IMAP server, port, and username, but does not record the 
 ```bash
 git clone https://github.com/hmlendea/netflix-household-confirmator.git
 cd netflix-household-confirmator
-dotnet restore NetflixHouseholdConfirmator.csproj
+dotnet restore
 ```
 
-Populate the required placeholders in `appsettings.json` before local execution.
+Populate the required placeholders in [appsettings.json](NetflixHouseholdConfirmator/appsettings.json) before local execution.
 
 ### Build
 
 ```bash
-dotnet build NetflixHouseholdConfirmator.csproj
+dotnet build
 ```
 
 ### Run
 
 ```bash
-dotnet run --project NetflixHouseholdConfirmator.csproj
+dotnet run --project NetflixHouseholdConfirmator
+```
+
+### Test
+
+The NUnit suite uses Moq to isolate IMAP and browser automation dependencies, so it requires no live mailbox or browser:
+
+```bash
+dotnet test
+```
+
+### Coverage
+
+Generate a Cobertura report with Coverlet:
+
+```bash
+dotnet test --collect:"XPlat Code Coverage" --results-directory NetflixHouseholdConfirmator.UnitTests/TestResults
 ```
 
 ### Continuous Integration
 
-The `.NET` workflow restores dependencies, compiles the project, and invokes the test target for pushes and pull requests targeting `master`:
+The [.NET workflow](.github/workflows/dotnet.yml) restores dependencies, compiles the project, and invokes the test target for pushes and pull requests targeting `master`:
 
 ```bash
 dotnet restore
@@ -217,17 +238,41 @@ This script downloads and executes an external release helper from `https://raw.
 
 | Package | Version | Scope | Purpose |
 |---------|---------|-------|---------|
+| `coverlet.collector` | `6.0.4` | Development | Collects cross-platform code coverage |
 | `MailKit` | `4.16.0` | Runtime | Retrieves and parses IMAP messages |
 | `MailKit.Net` | `2.0.0` | Runtime | Provides IMAP network support |
 | `Microsoft.Extensions.Configuration` | `10.0.5` | Runtime | Provides configuration abstractions |
 | `Microsoft.Extensions.Configuration.Binder` | `10.0.5` | Runtime | Binds configuration sections to typed settings |
 | `Microsoft.Extensions.Configuration.Json` | `10.0.5` | Runtime | Loads JSON configuration |
 | `Microsoft.Extensions.DependencyInjection` | `10.0.5` | Runtime | Constructs application services |
+| `Microsoft.NET.Test.Sdk` | `18.0.1` | Development | Hosts and discovers .NET tests |
+| `Moq` | `4.20.72` | Development | Creates isolated dependency substitutes |
 | `NuciLog` | `1.1.2` | Runtime | Records structured application logs |
 | `NuciLog.Core` | `2.6.0` | Runtime | Provides logging contracts and primitives |
 | `NuciWeb` | `4.0.0` | Runtime | Provides web interaction abstractions |
 | `NuciWeb.Automation` | `1.0.0` | Runtime | Defines browser automation contracts |
 | `NuciWeb.Automation.Selenium` | `1.0.1` | Runtime | Implements browser automation through Selenium |
+| `NUnit` | `4.4.0` | Development | Provides the unit-testing framework |
+| `NUnit.Analyzers` | `4.10.0` | Development | Analyses NUnit test correctness |
+| `NUnit3TestAdapter` | `6.0.0` | Development | Integrates NUnit with the .NET test host |
+
+## 🗂️ Project Structure
+
+The solution separates the executable application from its unit tests.
+
+### Projects and Packages
+
+| Project | Type | Purpose |
+|---------|------|---------|
+| [NetflixHouseholdConfirmator](NetflixHouseholdConfirmator/NetflixHouseholdConfirmator.csproj) | Console application | Monitors IMAP messages and confirms Netflix household requests |
+| [NetflixHouseholdConfirmator.UnitTests](NetflixHouseholdConfirmator.UnitTests/NetflixHouseholdConfirmator.UnitTests.csproj) | NUnit test project | Verifies configuration, logging, orchestration, email processing, and browser automation logic |
+
+### Directories
+
+| Directory | Purpose |
+|-----------|---------|
+| [NetflixHouseholdConfirmator](NetflixHouseholdConfirmator) | Application source and runtime configuration |
+| [NetflixHouseholdConfirmator.UnitTests](NetflixHouseholdConfirmator.UnitTests) | Unit tests and coverage configuration |
 
 ## 🤝 Contributing
 
@@ -238,6 +283,8 @@ When doing so, please:
 - Submit focused pull requests that conform to the existing code style
 - Maintain your branch synchronised with `master`
 - Revise the documentation when functionality changes
+- Properly test all modifications, including edge cases and error conditions
+- Add tests for additional or modified functionality
 
 ## 💝 Project Engagement
 

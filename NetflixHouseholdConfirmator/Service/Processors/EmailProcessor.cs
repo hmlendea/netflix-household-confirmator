@@ -1,27 +1,44 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 using MailKit;
 using MailKit.Net.Imap;
+
 using MimeKit;
+
 using NuciLog.Core;
 
 using NetflixHouseholdConfirmator.Configuration;
 using NetflixHouseholdConfirmator.Logging;
-using System.Linq;
 
 namespace NetflixHouseholdConfirmator.Service.Processors
 {
     public sealed class EmailProcessor(
         ImapSettings imapSettings,
-        ILogger logger) : IEmailProcessor
+        ILogger logger,
+        IImapClient imapClient) : IEmailProcessor
     {
-        readonly ImapSettings imapSettings = imapSettings;
-        readonly ILogger logger = logger;
-        readonly ImapClient imapClient = new();
+        private readonly ImapSettings imapSettings = imapSettings;
+        private readonly ILogger logger = logger;
+        private readonly IImapClient imapClient = imapClient;
 
-        DateTime lastConfirmationEmailDateTime = DateTime.Now;
+        private DateTime lastConfirmationEmailDateTime = DateTime.Now;
+
+        private static string ConfirmationUrlPattern
+            => ".*(https://[^ ]*UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA).*";
+
+        private static string ConfirmationUrlReplacement => "$1";
+
+        private static string HouseholdUpdateEmailSubject
+            => "How to update your Netflix Household";
+
+        public EmailProcessor(ImapSettings imapSettings, ILogger logger)
+            : this(imapSettings, logger, new ImapClient())
+        {
+        }
 
         public void LogIn()
         {
@@ -41,13 +58,13 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             {
                 imapClient.Connect(imapSettings.Server, imapSettings.Port, true);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
                 logger.Error(
                     MyOperation.EmailLogIn,
                     OperationStatus.Failure,
                     "Failed to connect to the IMAP server.",
-                    ex,
+                    exception,
                     logInfos);
 
                 throw;
@@ -65,13 +82,13 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             {
                 imapClient.Authenticate(imapSettings.Username, imapSettings.Password);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
                 logger.Error(
                     MyOperation.EmailLogIn,
                     OperationStatus.Failure,
                     "Failed to authenticate on the IMAP server.",
-                    ex,
+                    exception,
                     logInfos);
 
                 throw;
@@ -103,13 +120,13 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             {
                 imapClient.Disconnect(true);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
                 logger.Error(
                     MyOperation.EmailLogOut,
                     OperationStatus.Failure,
                     "Failed to disconnect from the IMAP server.",
-                    ex,
+                    exception,
                     logInfos);
 
                 throw;
@@ -130,9 +147,11 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 
             foreach (MimeMessage email in emails)
             {
-                if (email.Subject.Contains("How to update your Netflix Household"))
+                if (email.Subject.Contains(HouseholdUpdateEmailSubject))
                 {
-                    DateTime emailDateTime = DateTime.Parse(email.Headers["DateReceived"]);
+                    DateTime emailDateTime = DateTime.Parse(
+                        email.Headers["DateReceived"],
+                        CultureInfo.InvariantCulture);
 
                     if (emailDateTime > lastConfirmationEmailDateTime)
                     {
@@ -145,22 +164,22 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             return null;
         }
 
-        private string ExtractConfirmationUrlFromEmail(MimeMessage email)
-        => Regex.Replace(
+        private static string ExtractConfirmationUrlFromEmail(MimeMessage email)
+            => Regex.Replace(
                 email.HtmlBody.Replace(Environment.NewLine, string.Empty),
-                ".*(https:\\/\\/[^ ]*UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA).*",
-                "$1");
+                ConfirmationUrlPattern,
+                ConfirmationUrlReplacement);
 
         private IEnumerable<MimeMessage> RetrieveRecentEmails()
         {
-            var inbox = imapClient.Inbox;
+            IMailFolder inbox = imapClient.Inbox;
             inbox.Open(FolderAccess.ReadOnly);
 
             IList<MimeMessage> emails = [];
 
-            for(int i = inbox.Count - 1; i >= 0; i--)
+            for (int emailIndex = inbox.Count - 1; emailIndex >= 0; emailIndex -= 1)
             {
-                var email = inbox.GetMessage(i);
+                MimeMessage email = inbox.GetMessage(emailIndex);
 
                 if ((DateTime.Now - email.Date).TotalSeconds > imapSettings.MaxEmailAge)
                 {
