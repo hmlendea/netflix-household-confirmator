@@ -7,6 +7,8 @@
 
 Netflix Household Confirmator is a .NET console application that monitors an IMAP inbox and automatically confirms Netflix household update requests through browser automation.
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the current runtime boundaries, integrations, data flow, and operational constraints.
+
 ## 📑 Table of Contents
 
 - [Table of Contents](#table-of-contents)
