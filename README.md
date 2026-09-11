@@ -7,8 +7,6 @@
 
 Netflix Household Confirmator is a .NET console application that monitors an IMAP inbox and automatically confirms Netflix household update requests through browser automation.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the current runtime boundaries, integrations, data flow, and operational constraints.
-
 ## 📑 Table of Contents
 
 - [Table of Contents](#table-of-contents)
@@ -41,6 +39,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the current runtime boundaries, integ
 - [Project Structure](#project-structure)
   - [Projects and Packages](#projects-and-packages)
   - [Directories](#directories)
+- [Architecture](#architecture)
+- [Security](#security)
 - [Contributing](#contributing)
 - [Project Engagement](#project-engagement)
 - [License](#license)
@@ -276,6 +276,10 @@ The solution separates the executable application from its unit tests.
 | [NetflixHouseholdConfirmator](NetflixHouseholdConfirmator) | Application source and runtime configuration |
 | [NetflixHouseholdConfirmator.UnitTests](NetflixHouseholdConfirmator.UnitTests) | Unit tests and coverage configuration |
 
+## 🏗️ Architecture
+
+See the [architecture documentation](ARCHITECTURE.md) for the system context, principal components, runtime flows, ownership boundaries, dependencies, constraints, and extension points.
+
 ## 🤝 Contributing
 
 You are welcome to submit any suggestion, feedback, or modification to this project.
@@ -287,6 +291,10 @@ When doing so, please:
 - Revise the documentation when functionality changes
 - Properly test all modifications, including edge cases and error conditions
 - Add tests for additional or modified functionality
+
+## 🔒 Security
+
+For information on reporting security vulnerabilities, see [SECURITY.md](SECURITY.md).
 
 ## 💝 Project Engagement
 
