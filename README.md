@@ -1,139 +1,253 @@
-[![Donate](https://img.shields.io/badge/-%E2%99%A5%20Donate-%23ff69b4)](https://hmlendea.go.ro/fund.html)
+[![Donate](https://img.shields.io/badge/-%E2%99%A5%20Donate-%23ff69b4)](https://hmlendea.go.ro/funding)
 [![Latest Release](https://img.shields.io/github/v/release/hmlendea/netflix-household-confirmator)](https://github.com/hmlendea/netflix-household-confirmator/releases/latest)
 [![Build Status](https://github.com/hmlendea/netflix-household-confirmator/actions/workflows/dotnet.yml/badge.svg)](https://github.com/hmlendea/netflix-household-confirmator/actions/workflows/dotnet.yml)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://gnu.org/licenses/gpl-3.0)
+[![License](https://img.shields.io/github/license/hmlendea/netflix-household-confirmator)](https://github.com/hmlendea/netflix-household-confirmator/blob/master/LICENSE)
 
 # Netflix Household Confirmator
 
-Automatically confirms Netflix household update emails by:
+Netflix Household Confirmator is a .NET console application that monitors an IMAP inbox and automatically confirms Netflix household update requests through browser automation.
 
-1. connecting to an IMAP inbox,
-2. scanning recent messages for the Netflix household confirmation email,
-3. extracting the confirmation URL from the email body,
-4. opening that URL in a browser automation session,
-5. clicking the confirmation button when needed.
+## 📑 Table of Contents
 
-The application runs continuously until stopped.
+- [Table of Contents](#table-of-contents)
+- [Capabilities](#capabilities)
+- [Usage](#usage)
+- [Known Limitations](#known-limitations)
+- [System Requirements](#system-requirements)
+- [Installation](#installation)
+  - [Manual Installation](#manual-installation)
+- [Configuration](#configuration)
+  - [Configuration Files](#configuration-files)
+  - [Settings](#settings)
+  - [Reload Behaviour](#reload-behaviour)
+  - [Secret Management](#secret-management)
+- [Compatibility](#compatibility)
+- [Integrations](#integrations)
+- [Authentication and Authorisation](#authentication-and-authorisation)
+- [Privacy and Data](#privacy-and-data)
+  - [Data Locations](#data-locations)
+- [Development](#development)
+  - [Requirements](#requirements)
+  - [Setup](#setup)
+  - [Build](#build)
+  - [Run](#run)
+  - [Continuous Integration](#continuous-integration)
+  - [Release](#release)
+  - [Dependencies](#dependencies)
+- [Contributing](#contributing)
+- [Project Engagement](#project-engagement)
+- [License](#license)
 
-## How It Works
+## ✨ Capabilities
 
-At startup, the application:
+- Monitors an IMAP inbox continuously for recent Netflix household update messages
+- Extracts confirmation URLs from matching email content
+- Confirms household requests through headless browser automation
+- Supports visible browser execution for diagnostics
+- Prevents repeated processing of the identical email during a process session
+- Records structured logs and optional crash screenshots
 
-1. loads configuration from `appsettings.json`,
-2. starts an available Selenium-compatible web driver,
-3. logs into the configured IMAP account,
-4. enters a loop that checks recent inbox messages,
-5. confirms new Netflix household requests as they arrive.
+## 🚀 Usage
 
-The browser runs headless by default. Setting `debugSettings.isDebugMode` to `true` disables headless mode so you can watch the automation interact with the page.
+Complete the required values in `appsettings.json`, then start the executable from its extracted directory:
 
-## Requirements
-
-- .NET SDK/runtime targeting `net10.0`
-- Access to an IMAP mailbox that receives the Netflix confirmation emails
-- A supported browser plus a compatible Selenium driver available on the machine
-- Network access to both the IMAP server and Netflix
-
-## Configuration
-
-Edit `appsettings.json` before running the application.
-
-### Example
-
-```json
-{
-	"botSettings": {
-		"pageLoadTimeout": 90
-	},
-	"imapSettings": {
-		"server": "imap.example.com",
-		"port": 993,
-		"username": "user@example.com",
-		"password": "your-password",
-		"maxEmailAge": 1800
-	},
-	"debugSettings": {
-		"crashScreenshotFileName": "crash.png",
-		"isDebugMode": false
-	},
-	"nuciLoggerSettings": {
-		"minimumLevel": "Debug",
-		"logFilePath": "logfile.log",
-		"isFileOutputEnabled": true
-	}
-}
+```bash
+./NetflixHouseholdConfirmator
 ```
 
-### Settings Reference
+On Windows, execute `NetflixHouseholdConfirmator.exe`. The application continues polling until the process is terminated.
 
-| Section | Key | Description |
-| --- | --- | --- |
-| `botSettings` | `pageLoadTimeout` | Page load timeout used by browser automation, in seconds. |
-| `imapSettings` | `server` | IMAP server hostname. |
-| `imapSettings` | `port` | IMAP server port. `993` is typical for IMAPS. |
-| `imapSettings` | `username` | IMAP login username. |
-| `imapSettings` | `password` | IMAP login password. |
-| `imapSettings` | `maxEmailAge` | Maximum age, in seconds, for emails considered during polling. Older emails are ignored. |
-| `debugSettings` | `crashScreenshotFileName` | File name used for a crash screenshot when browser automation fails. Leave empty to disable screenshots. |
-| `debugSettings` | `isDebugMode` | Enables visible browser mode when `true`. Headless mode is used when `false`. |
-| `nuciLoggerSettings` | `minimumLevel` | Minimum log level. |
-| `nuciLoggerSettings` | `logFilePath` | Path to the log file. |
-| `nuciLoggerSettings` | `isFileOutputEnabled` | Enables or disables file logging. |
+## ⚠️ Known Limitations
 
-The service will keep polling the inbox until you stop it.
+- Only messages received after the application starts are eligible for processing
+- Email detection depends upon the subject containing `How to update your Netflix Household`
+- Confirmation depends upon the current Netflix page structure and configured browser selectors
 
-## Logging And Debugging
+## 🖥️ System Requirements
 
-- Application logs are written through `NuciLog`.
-- If browser automation crashes and `crashScreenshotFileName` is configured, a screenshot is saved next to the log file.
-- Set `debugSettings.isDebugMode` to `true` to run the browser in visible mode for troubleshooting.
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| Linux | An `arm`, `arm64`, or `x64` host supported by a published release | N/A |
+| macOS | An `arm64` or `x64` host supported by a published release | N/A |
+| Windows | An `arm64` or `x64` host supported by a published release | N/A |
+| Browser automation | A Selenium-compatible browser and corresponding WebDriver | N/A |
+| Email service | An SSL/TLS IMAP mailbox that receives Netflix household update messages | N/A |
+| Network | Access to the configured IMAP server and Netflix | N/A |
 
-## Operational Notes
+## 📦 Installation
 
-- The application inspects the inbox of the configured IMAP account.
-- It only considers relatively recent emails, based on `imapSettings.maxEmailAge`.
-- It looks specifically for emails with the subject containing `How to update your Netflix Household`.
-- It is intended to process new confirmation emails that arrive after the service starts.
+[![Obtain it from GitHub](https://raw.githubusercontent.com/hmlendea/readme-assets/master/badges/stores/github.png)](https://github.com/hmlendea/netflix-household-confirmator/releases)
 
-## Development
+### Manual Installation
+
+1. Download the archive for your operating system and architecture from the [latest release](https://github.com/hmlendea/netflix-household-confirmator/releases/latest).
+2. Extract the archive to the desired directory.
+3. Ensure that a Selenium-compatible browser and corresponding WebDriver are available.
+4. Populate the required placeholders in `appsettings.json`.
+5. Launch the executable as described in [Usage](#usage).
+
+## ⚙️ Configuration
+
+The application reads `appsettings.json` from its working directory during startup. Replace every IMAP placeholder before execution and retain the configuration file beside the executable.
+
+### Configuration Files
+
+| File | Scope | Purpose |
+|------|-------|---------|
+| `appsettings.json` | Application installation | Configures browser automation, IMAP access, diagnostics, and logging |
+
+### Settings
+
+The subsequent settings are recognised:
+| Section | Key | Type | Default | Required | Description |
+|---------|-----|------|---------|----------|-------------|
+| `botSettings` | `pageLoadTimeout` | `integer` | `90` | Yes | Maximum browser page-load interval, in seconds |
+| `imapSettings` | `server` | `string` | — | Yes | IMAP server hostname |
+| `imapSettings` | `port` | `integer` | `993` | Yes | SSL/TLS IMAP server port |
+| `imapSettings` | `username` | `string` | — | Yes | IMAP account username |
+| `imapSettings` | `password` | `string` | — | Yes | IMAP account password |
+| `imapSettings` | `maxEmailAge` | `integer` | `1800` | Yes | Maximum eligible message age, in seconds |
+| `debugSettings` | `crashScreenshotFileName` | `string` | `crash.png` | No | Crash screenshot filename; an empty value deactivates capture |
+| `debugSettings` | `isDebugMode` | `boolean` | `false` | No | Uses a visible browser when `true` and headless execution when `false` |
+| `nuciLoggerSettings` | `minimumLevel` | `string` | `Debug` | Yes | Minimum recorded log level |
+| `nuciLoggerSettings` | `logFilePath` | `string` | `logfile.log` | When file logging or screenshots are active | Destination for file logs and the base directory for crash screenshots |
+| `nuciLoggerSettings` | `isFileOutputEnabled` | `boolean` | `true` | No | Activates file logging |
+
+### Reload Behaviour
+
+Configuration values are bound during startup. Restart the application after modifying `appsettings.json`.
+
+### Secret Management
+
+The application reads the IMAP password directly from `appsettings.json`. Restrict access to this file, use a dedicated application password when the email provider supports one, and never commit genuine credentials.
+
+## 🧩 Compatibility
+
+| Component | Supported Versions | Notes |
+|-----------|--------------------|-------|
+| Published Linux executables | `arm`, `arm64`, `x64` | Available in release `v1.1.0` |
+| Published macOS executables | `arm64`, `x64` | Available in release `v1.1.0` |
+| Published Windows executables | `arm64`, `x64` | Available in release `v1.1.0` |
+| Source compilation | .NET 10.0 | The project targets `net10.0` |
+
+## 🔌 Integrations
+
+| Integration | Compatibility | Purpose | Required |
+|-------------|---------------|---------|----------|
+| IMAP | SSL/TLS endpoint on the configured host and port | Retrieves household update messages | Yes |
+| Netflix | Household update email and confirmation page | Confirms the household update request | Yes |
+| Selenium-compatible browser | Browser and WebDriver recognised by NuciWeb Automation | Navigates and interacts with the confirmation page | Yes |
+
+## 🔐 Authentication and Authorisation
+
+The application authenticates to the configured IMAP server with the username and password from `appsettings.json`. It does not request Netflix account credentials; browser automation accesses the confirmation URL extracted from the email.
+
+## 🛡️ Privacy and Data
+
+| Data | Purpose | Storage | Retention | Optional |
+|------|---------|---------|-----------|----------|
+| IMAP username and password | Authenticates to the configured mailbox | `appsettings.json` and process memory | Until the configuration is modified and the process exits | No |
+| Recent email content and confirmation URLs | Identifies and confirms household update requests | Process memory only | Current process session | No |
+| IMAP server, port, and username | Records connection diagnostics | Configured logger outputs | No application-level retention policy | No |
+| Crash screenshot | Captures browser state after an automation failure | Directory containing the configured log file | Until manually deleted | Yes |
+
+The logger records the IMAP server, port, and username, but does not record the IMAP password. Set `nuciLoggerSettings.isFileOutputEnabled` to `false` to deactivate persistent file logging, and set `debugSettings.crashScreenshotFileName` to an empty value to deactivate screenshots.
+
+### Data Locations
+
+| Platform or Scope | Location | Contents |
+|-------------------|----------|----------|
+| Application directory | `appsettings.json` | Runtime configuration and IMAP credentials |
+| Configured logging destination | `nuciLoggerSettings.logFilePath` | Application logs when file output is active |
+| Configured logging directory | `debugSettings.crashScreenshotFileName` | Optional crash screenshot |
+
+## 🛠️ Development
+
+### Requirements
+
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- Git
+- An IMAP mailbox and a Selenium-compatible browser with a corresponding WebDriver for local execution
+
+### Setup
+
+```bash
+git clone https://github.com/hmlendea/netflix-household-confirmator.git
+cd netflix-household-confirmator
+dotnet restore NetflixHouseholdConfirmator.csproj
+```
+
+Populate the required placeholders in `appsettings.json` before local execution.
 
 ### Build
 
 ```bash
-dotnet build
+dotnet build NetflixHouseholdConfirmator.csproj
 ```
 
 ### Run
 
 ```bash
-dotnet run
+dotnet run --project NetflixHouseholdConfirmator.csproj
 ```
 
-### Publish
+### Continuous Integration
+
+The `.NET` workflow restores dependencies, compiles the project, and invokes the test target for pushes and pull requests targeting `master`:
+
+```bash
+dotnet restore
+dotnet build --no-restore
+dotnet test --no-build --verbosity normal
+```
+
+### Release
 
 The repository includes `release.sh`, which delegates to the upstream deployment script used by the project maintainer.
 
 ```bash
-bash ./release.sh 1.0.0
+bash ./release.sh 1.1.0
 ```
 
-This script downloads and executes an external release helper from: `https://raw.githubusercontent.com/hmlendea/deployment-scripts/master/release/dotnet/10.0.sh`
+This script downloads and executes an external release helper from `https://raw.githubusercontent.com/hmlendea/deployment-scripts/master/release/dotnet/10.0.sh`.
 
 **Note:** Piping into `bash` is an intensely controversial topic. Please review any external scripts before running them in your environment!
 
-## Contributing
+### Dependencies
 
-Contributions are welcome.
+| Package | Version | Scope | Purpose |
+|---------|---------|-------|---------|
+| `MailKit` | `4.16.0` | Runtime | Retrieves and parses IMAP messages |
+| `MailKit.Net` | `2.0.0` | Runtime | Provides IMAP network support |
+| `Microsoft.Extensions.Configuration` | `10.0.5` | Runtime | Provides configuration abstractions |
+| `Microsoft.Extensions.Configuration.Binder` | `10.0.5` | Runtime | Binds configuration sections to typed settings |
+| `Microsoft.Extensions.Configuration.Json` | `10.0.5` | Runtime | Loads JSON configuration |
+| `Microsoft.Extensions.DependencyInjection` | `10.0.5` | Runtime | Constructs application services |
+| `NuciLog` | `1.1.2` | Runtime | Records structured application logs |
+| `NuciLog.Core` | `2.6.0` | Runtime | Provides logging contracts and primitives |
+| `NuciWeb` | `4.0.0` | Runtime | Provides web interaction abstractions |
+| `NuciWeb.Automation` | `1.0.0` | Runtime | Defines browser automation contracts |
+| `NuciWeb.Automation.Selenium` | `1.0.1` | Runtime | Implements browser automation through Selenium |
 
-Please:
+## 🤝 Contributing
 
-- keep changes cross-platform
-- preserve public APIs unless the change is intentionally breaking
-- keep pull requests focused and consistent with existing style
-- update documentation when behaviour changes
-- add or update tests for new behaviour
+You are welcome to submit any suggestion, feedback, or modification to this project.
 
-## License
+When doing so, please:
+- Maintain cross-platform compatibility
+- Submit focused pull requests that conform to the existing code style
+- Maintain your branch synchronised with `master`
+- Revise the documentation when functionality changes
 
-Licensed under the GNU General Public License v3.0 or later.
-See [LICENSE](./LICENSE) for details.
+## 💝 Project Engagement
+
+Discovered a problem or have a suggestion? [Open an issue](https://github.com/hmlendea/netflix-household-confirmator/issues)!
+
+If you find this project useful, consider [funding it](https://hmlendea.go.ro/funding) or starring ⭐️ it on GitHub!
+
+[![Donate](https://raw.githubusercontent.com/hmlendea/readme-assets/master/donate_generic.png)](https://hmlendea.go.ro/funding)
+
+## 📄 License
+
+This project is being distributed under the `GNU General Public License v3.0`.
+See [LICENSE](./LICENSE) for further information.
