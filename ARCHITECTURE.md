@@ -246,8 +246,8 @@ flowchart LR
 | Interface or Integration | Direction | Contract | Owner | Failure Semantics |
 |--------------------------|-----------|----------|-------|-------------------|
 | `IHouseholdConfirmator` | Inbound from host | `ConfirmIncomingHouseholdUpdateRequests()` | `HouseholdConfirmator` | Login and polling failures are logged and propagated; logout runs in `finally` after polling starts |
-| `IEmailProcessor` | Outbound from orchestration | `LogIn`, `GetHouseholdConfirmationUrl`, `LogOut` | `EmailProcessor` | Connection, authentication, and disconnection failures are logged and propagated |
-| MailKit `IImapClient` | Outbound | SSL/TLS IMAP connection, authentication, read-only inbox access | `EmailProcessor` | MailKit exceptions are logged at the operation boundary and propagated |
+| `IEmailProcessor` | Outbound from orchestration | `LogIn`, `GetHouseholdConfirmationUrl`, `LogOut` | `EmailProcessor` | Connection, authentication, and disconnection failures are logged and propagated; retrieval and date-parsing failures propagate without an `EmailProcessor` catch block |
+| MailKit `IImapClient` | Outbound | SSL/TLS IMAP connection, authentication, read-only inbox access | `EmailProcessor` | Connection, authentication, and disconnection exceptions are logged and propagated; inbox retrieval exceptions propagate directly |
 | `INetflixProcessor` | Outbound from orchestration | `ConfirmHousehold(string confirmationUrl)` | `NetflixProcessor` | Browser automation exceptions are logged and swallowed by the processor; a success log is subsequently emitted by the current implementation |
 | `IWebProcessor` | Outbound | URL navigation, element visibility wait, visibility query, click, and fixed wait | `NetflixProcessor` | Exceptions are handled by `NetflixProcessor` |
 | `ILogger` | Outbound | NuciLog operation and status events | Host and processors | Logging failures are not translated by the application |
@@ -287,7 +287,7 @@ sequenceDiagram
     C->>E: LogOut()
 ```
 
-`EmailProcessor` scans from the newest inbox message backwards and stops when message age exceeds `MaxEmailAge`. It requires a case-sensitive subject containing `How to update your Netflix Household`, then requires the received timestamp to be newer than its session-local `lastConfirmationEmailDateTime`. The HTML body is reduced to a URL matching the `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA` path pattern. The orchestration layer forwards every non-null return value, including empty or whitespace strings, because the current contract tests treat any non-null value as a request.
+`EmailProcessor` scans from the newest inbox message backwards and stops when message age exceeds `MaxEmailAge`. It requires a case-sensitive subject containing `How to update your Netflix Household`, then parses the `DateReceived` header with invariant culture and requires that value to be newer than its session-local `lastConfirmationEmailDateTime`. A malformed or absent header therefore terminates the polling iteration through a propagated parsing exception. The HTML body is normalised by removing `Environment.NewLine`, then passed through the `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA` URL pattern; when the pattern does not match, the unchanged HTML body is returned as the fallback. The orchestration layer forwards every non-null return value, including empty or whitespace strings, because the current contract tests treat any non-null value as a request.
 
 ## ⚙️ Domain-Specific Concerns
 
@@ -320,7 +320,7 @@ Email content and extracted URLs remain in process memory during polling. Logs a
 
 ### Concurrency And Resource Use
 
-The application uses one synchronous polling loop, one singleton `EmailProcessor`, one singleton `NetflixProcessor`, one IMAP client session, and one process-owned WebDriver. No application-managed parallelism, queue, or backpressure mechanism exists. The polling loop has no delay and therefore repeatedly scans the inbox while no request is available. A single process is the assumed deployment unit; running multiple instances against the same mailbox can produce duplicate external confirmations because coordination is not implemented.
+The application uses one synchronous polling loop, one singleton `EmailProcessor`, one singleton `NetflixProcessor`, one IMAP client session, and one process-owned WebDriver. No application-managed parallelism, queue, or backpressure mechanism exists. The polling loop has no delay and therefore repeatedly scans the inbox while no request is available. A single process is the assumed deployment unit; running multiple instances against the same mailbox can produce duplicate external confirmations because coordination is not implemented. `HouseholdConfirmator` calls `LogIn` before entering its `try` block, so a login failure does not trigger `LogOut`; once login succeeds, polling failures enter the `finally` path and attempt logout.
 
 ## 🧭 Dependency Direction And Rules
 

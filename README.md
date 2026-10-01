@@ -69,6 +69,7 @@ On Windows, execute `NetflixHouseholdConfirmator.exe`. The application continues
 - Only messages received after the application starts are eligible for processing
 - Email detection depends upon the subject containing `How to update your Netflix Household`
 - Confirmation depends upon the current Netflix page structure and configured browser selectors
+- Browser automation failures are logged and swallowed; a success log entry does not prove that Netflix accepted the request
 
 ## 🖥️ System Requirements
 
@@ -279,6 +280,8 @@ The solution separates the executable application from its unit tests.
 ## 🏗️ Architecture
 
 See the [architecture documentation](ARCHITECTURE.md) for the system context, principal components, runtime flows, ownership boundaries, dependencies, constraints, and extension points.
+
+Implementation-grounded runtime, operations, and testing notes are collected in the [repository documentation](docs/README.md).
 
 ## 🤝 Contributing
 
