@@ -152,6 +152,8 @@ The application authenticates to the configured IMAP server with the username an
 
 ## 🛡️ Privacy and Data
 
+For the detailed description of how the application handles privacy and personal data, see [PRIVACY.md](./PRIVACY.md).
+
 | Data | Purpose | Storage | Retention | Optional |
 |------|---------|---------|-----------|----------|
 | IMAP username and password | Authenticates to the configured mailbox | [appsettings.json](NetflixHouseholdConfirmator/appsettings.json) and process memory | Until the configuration is modified and the process exits | No |
