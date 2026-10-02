@@ -13,22 +13,49 @@ namespace NetflixHouseholdConfirmator.Service
     {
         public void ConfirmIncomingHouseholdUpdateRequests()
         {
-            emailProcessor.LogIn();
-
-            logger.Info(
-                MyOperation.ListenForConfirmationRequests,
-                OperationStatus.Started,
-                "Listening for incoming household update requests.");
-
             try
             {
-                while(true)
-                {
-                    string confirmationUrl = emailProcessor.GetHouseholdConfirmationUrl();
+                emailProcessor.LogIn();
 
-                    if (confirmationUrl is not null)
+                logger.Info(
+                    MyOperation.ListenForConfirmationRequests,
+                    OperationStatus.Started,
+                    "Listening for incoming household update requests.");
+
+                try
+                {
+                    while(true)
                     {
-                        netflixProcessor.ConfirmHousehold(confirmationUrl);
+                        string confirmationUrl = emailProcessor.GetHouseholdConfirmationUrl();
+
+                        if (confirmationUrl is not null)
+                        {
+                            netflixProcessor.ConfirmHousehold(confirmationUrl);
+                        }
+                    }
+                }
+                catch (Exception exception)
+                {
+                    logger.Error(
+                        MyOperation.ListenForConfirmationRequests,
+                        OperationStatus.Failure,
+                        exception);
+
+                    throw;
+                }
+                finally
+                {
+                    try
+                    {
+                        emailProcessor.LogOut();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(
+                            MyOperation.EmailLogOut,
+                            OperationStatus.Failure,
+                            "Failed to disconnect from the IMAP server during cleanup.",
+                            ex);
                     }
                 }
             }
@@ -40,10 +67,6 @@ namespace NetflixHouseholdConfirmator.Service
                     exception);
 
                 throw;
-            }
-            finally
-            {
-                emailProcessor.LogOut();
             }
         }
     }

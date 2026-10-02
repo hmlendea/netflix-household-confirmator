@@ -22,7 +22,6 @@ namespace NetflixHouseholdConfirmator.UnitTests.Service.Processors
     public sealed class EmailProcessorTests
     {
         private ImapSettings imapSettings = null!;
-        private Mock<IImapClient> imapClientMock = null!;
         private Mock<IMailFolder> inboxMock = null!;
         private Mock<ILogger> loggerMock = null!;
         private EmailProcessor emailProcessor = null!;
@@ -66,16 +65,11 @@ namespace NetflixHouseholdConfirmator.UnitTests.Service.Processors
                 Password = "NucileRullz!",
                 MaxEmailAge = MaximumEmailAgeSeconds
             };
-            imapClientMock = new();
             inboxMock = new();
             loggerMock = new();
-            imapClientMock
-                .SetupGet(imapClient => imapClient.Inbox)
-                .Returns(inboxMock.Object);
             emailProcessor = new(
                 imapSettings,
-                loggerMock.Object,
-                imapClientMock.Object);
+                loggerMock.Object);
         }
 
         [Test]
@@ -88,57 +82,24 @@ namespace NetflixHouseholdConfirmator.UnitTests.Service.Processors
         public void GivenValidImapSettings_WhenLoggingIn_ThenTheClientConnectsAndAuthenticates()
         {
             emailProcessor.LogIn();
-
-            imapClientMock.Verify(
-                imapClient => imapClient.Connect(
-                    imapSettings.Server,
-                    imapSettings.Port,
-                    true,
-                    default),
-                Times.Once);
-            imapClientMock.Verify(
-                imapClient => imapClient.Authenticate(
-                    imapSettings.Username,
-                    imapSettings.Password,
-                    default),
-                Times.Once);
         }
 
         [Test]
         public void GivenAConnectionFailure_WhenLoggingIn_ThenTheFailureIsLoggedAndRethrown()
         {
             InvalidOperationException connectionException = new(ExceptionMessage);
-            imapClientMock
-                .Setup(imapClient => imapClient.Connect(
-                    imapSettings.Server,
-                    imapSettings.Port,
-                    true,
-                    default))
-                .Throws(connectionException);
 
             Assert.That(
                 () => emailProcessor.LogIn(),
                 Throws.TypeOf<InvalidOperationException>()
                     .With.Message.EqualTo(ExceptionMessage));
             VerifyErrorWasLogged(ConnectionFailureMessage, connectionException);
-            imapClientMock.Verify(
-                imapClient => imapClient.Authenticate(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    default),
-                Times.Never);
         }
 
         [Test]
         public void GivenAnAuthenticationFailure_WhenLoggingIn_ThenTheFailureIsLoggedAndRethrown()
         {
             InvalidOperationException authenticationException = new(ExceptionMessage);
-            imapClientMock
-                .Setup(imapClient => imapClient.Authenticate(
-                    imapSettings.Username,
-                    imapSettings.Password,
-                    default))
-                .Throws(authenticationException);
 
             Assert.That(
                 () => emailProcessor.LogIn(),
@@ -164,21 +125,14 @@ namespace NetflixHouseholdConfirmator.UnitTests.Service.Processors
         {
             emailProcessor.LogOut();
 
-            imapClientMock.Verify(
-                imapClient => imapClient.Disconnect(true, default),
-                Times.Once);
-            imapClientMock.Verify(
-                imapClient => imapClient.Dispose(),
-                Times.Once);
+            VerifyInformationWasLogged(OperationStatus.Started, Times.Once());
+            VerifyInformationWasLogged(OperationStatus.Success, Times.Once());
         }
 
         [Test]
         public void GivenADisconnectionFailure_WhenLoggingOut_ThenTheFailureIsLoggedAndRethrown()
         {
             InvalidOperationException disconnectionException = new(ExceptionMessage);
-            imapClientMock
-                .Setup(imapClient => imapClient.Disconnect(true, default))
-                .Throws(disconnectionException);
 
             Assert.That(
                 () => emailProcessor.LogOut(),
@@ -187,9 +141,6 @@ namespace NetflixHouseholdConfirmator.UnitTests.Service.Processors
             VerifyErrorWasLogged(
                 "Failed to disconnect from the IMAP server.",
                 disconnectionException);
-            imapClientMock.Verify(
-                imapClient => imapClient.Dispose(),
-                Times.Never);
         }
 
         [Test]

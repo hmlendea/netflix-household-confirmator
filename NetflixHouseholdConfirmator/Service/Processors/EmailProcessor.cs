@@ -18,12 +18,11 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 {
     public sealed class EmailProcessor(
         ImapSettings imapSettings,
-        ILogger logger,
-        IImapClient imapClient) : IEmailProcessor
+        ILogger logger) : IEmailProcessor
     {
         private readonly ImapSettings imapSettings = imapSettings;
         private readonly ILogger logger = logger;
-        private readonly IImapClient imapClient = imapClient;
+        private readonly ImapClient imapClient = new();
 
         private DateTime lastConfirmationEmailDateTime = DateTime.Now;
 
@@ -34,11 +33,6 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 
         private static string HouseholdUpdateEmailSubject
             => "How to update your Netflix Household";
-
-        public EmailProcessor(ImapSettings imapSettings, ILogger logger)
-            : this(imapSettings, logger, new ImapClient())
-        {
-        }
 
         public void LogIn()
         {

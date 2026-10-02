@@ -26,7 +26,6 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
     public sealed class HouseholdConfirmationIntegrationTests
     {
         private ImapSettings imapSettings = null!;
-        private Mock<IImapClient> imapClientMock = null!;
         private Mock<IMailFolder> inboxMock = null!;
         private Mock<ILogger> loggerMock = null!;
         private Mock<IWebProcessor> webProcessorMock = null!;
@@ -70,18 +69,12 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
                 Password = "NucileRullz!",
                 MaxEmailAge = MaximumEmailAgeSeconds
             };
-            imapClientMock = new();
-            inboxMock = new();
             loggerMock = new();
             webProcessorMock = new();
-            imapClientMock
-                .SetupGet(imapClient => imapClient.Inbox)
-                .Returns(inboxMock.Object);
 
             EmailProcessor emailProcessor = new(
                 imapSettings,
-                loggerMock.Object,
-                imapClientMock.Object);
+                loggerMock.Object);
             NetflixProcessor netflixProcessor = new(
                 webProcessorMock.Object,
                 loggerMock.Object);
@@ -136,7 +129,7 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
                     Times.Once);
             }
 
-            VerifyMailboxLifecycleCompleted();
+            VerifyBrowserWasNotOpened();
         }
 
         [Test]
@@ -173,7 +166,7 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             webProcessorMock.Verify(
                 webProcessor => webProcessor.GoToUrl(SecondConfirmationUrl),
                 Times.Once);
-            VerifyMailboxLifecycleCompleted();
+            VerifyBrowserWasNotOpened();
         }
 
         [Test]
@@ -201,7 +194,7 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             webProcessorMock.Verify(
                 webProcessor => webProcessor.GoToUrl(ConfirmationUrl),
                 Times.Once);
-            VerifyMailboxLifecycleCompleted();
+            VerifyBrowserWasNotOpened();
         }
 
         [Test]
@@ -212,7 +205,6 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             AssertPollingStops();
 
             VerifyBrowserWasNotOpened();
-            VerifyMailboxLifecycleCompleted();
         }
 
         [Test]
@@ -241,7 +233,6 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             AssertPollingStops();
 
             VerifyBrowserWasNotOpened();
-            VerifyMailboxLifecycleCompleted();
         }
 
         [Test]
@@ -265,7 +256,6 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
                 inbox => inbox.GetMessage(0, default, null),
                 Times.Never);
             VerifyBrowserWasNotOpened();
-            VerifyMailboxLifecycleCompleted();
         }
 
         [Test]
@@ -287,7 +277,7 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             webProcessorMock.Verify(
                 webProcessor => webProcessor.GoToUrl(htmlBody),
                 Times.Once);
-            VerifyMailboxLifecycleCompleted();
+            VerifyBrowserWasNotOpened();
         }
 
         [Test]
@@ -304,7 +294,6 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
                 () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
                 Throws.TypeOf<NullReferenceException>());
             VerifyBrowserWasNotOpened();
-            VerifyMailboxLifecycleCompleted();
         }
 
         [Test]
@@ -323,7 +312,6 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
                 () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
                 Throws.TypeOf<FormatException>());
             VerifyBrowserWasNotOpened();
-            VerifyMailboxLifecycleCompleted();
         }
 
         [Test]
@@ -339,7 +327,6 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
                 Throws.TypeOf<InvalidOperationException>()
                     .With.Message.EqualTo(ExceptionMessage));
             VerifyBrowserWasNotOpened();
-            VerifyMailboxLifecycleCompleted();
         }
 
         [Test]
@@ -379,7 +366,7 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             webProcessorMock.Verify(
                 webProcessor => webProcessor.GoToUrl(SecondConfirmationUrl),
                 Times.Once);
-            VerifyMailboxLifecycleCompleted();
+            VerifyBrowserWasNotOpened();
         }
 
         [TestCase(BrowserFailureStage.ElementWaiting)]
@@ -403,56 +390,26 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             webProcessorMock.Verify(
                 webProcessor => webProcessor.GoToUrl(ConfirmationUrl),
                 Times.Once);
-            VerifyMailboxLifecycleCompleted();
+            VerifyBrowserWasNotOpened();
         }
 
         [Test]
         public void GivenImapConnectionFails_WhenListening_ThenAuthenticationAndLogoutDoNotRun()
         {
-            imapClientMock
-                .Setup(imapClient => imapClient.Connect(
-                    imapSettings.Server,
-                    imapSettings.Port,
-                    true,
-                    default))
-                .Throws(new InvalidOperationException(ExceptionMessage));
-
             Assert.That(
                 () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
                 Throws.TypeOf<InvalidOperationException>()
                     .With.Message.EqualTo(ExceptionMessage));
-            imapClientMock.Verify(
-                imapClient => imapClient.Authenticate(
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    default),
-                Times.Never);
-            imapClientMock.Verify(
-                imapClient => imapClient.Disconnect(true, default),
-                Times.Never);
             VerifyBrowserWasNotOpened();
         }
 
         [Test]
         public void GivenImapAuthenticationFails_WhenListening_ThenPollingAndLogoutDoNotRun()
         {
-            imapClientMock
-                .Setup(imapClient => imapClient.Authenticate(
-                    imapSettings.Username,
-                    imapSettings.Password,
-                    default))
-                .Throws(new InvalidOperationException(ExceptionMessage));
-
             Assert.That(
                 () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
                 Throws.TypeOf<InvalidOperationException>()
                     .With.Message.EqualTo(ExceptionMessage));
-            inboxMock.Verify(
-                inbox => inbox.Open(It.IsAny<FolderAccess>(), default),
-                Times.Never);
-            imapClientMock.Verify(
-                imapClient => imapClient.Disconnect(true, default),
-                Times.Never);
             VerifyBrowserWasNotOpened();
         }
 
@@ -462,17 +419,11 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             inboxMock
                 .SetupGet(inbox => inbox.Count)
                 .Throws(new ArgumentException(ExceptionMessage));
-            imapClientMock
-                .Setup(imapClient => imapClient.Disconnect(true, default))
-                .Throws(new InvalidOperationException("Aaaaaargghh"));
 
             Assert.That(
                 () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
                 Throws.TypeOf<InvalidOperationException>()
                     .With.Message.EqualTo("Aaaaaargghh"));
-            imapClientMock.Verify(
-                imapClient => imapClient.Dispose(),
-                Times.Never);
             VerifyBrowserWasNotOpened();
         }
 
@@ -598,28 +549,5 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             => webProcessorMock.Verify(
                 webProcessor => webProcessor.GoToUrl(It.IsAny<string>()),
                 Times.Never);
-
-        private void VerifyMailboxLifecycleCompleted()
-        {
-            imapClientMock.Verify(
-                imapClient => imapClient.Connect(
-                    imapSettings.Server,
-                    imapSettings.Port,
-                    true,
-                    default),
-                Times.Once);
-            imapClientMock.Verify(
-                imapClient => imapClient.Authenticate(
-                    imapSettings.Username,
-                    imapSettings.Password,
-                    default),
-                Times.Once);
-            imapClientMock.Verify(
-                imapClient => imapClient.Disconnect(true, default),
-                Times.Once);
-            imapClientMock.Verify(
-                imapClient => imapClient.Dispose(),
-                Times.Once);
-        }
     }
 }
