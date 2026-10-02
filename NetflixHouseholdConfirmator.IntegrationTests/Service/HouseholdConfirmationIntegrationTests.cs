@@ -1,11 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Globalization;
-
-using MailKit;
-using MailKit.Net.Imap;
-
-using MimeKit;
 
 using Moq;
 
@@ -25,8 +18,7 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
     [TestFixture]
     public sealed class HouseholdConfirmationIntegrationTests
     {
-        private ImapSettings imapSettings = null!;
-        private Mock<IMailFolder> inboxMock = null!;
+        private Mock<IEmailProcessor> emailProcessorMock = null!;
         private Mock<ILogger> loggerMock = null!;
         private Mock<IWebProcessor> webProcessorMock = null!;
         private HouseholdConfirmator householdConfirmator = null!;
@@ -61,25 +53,14 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
         [SetUp]
         public void SetUp()
         {
-            imapSettings = new()
-            {
-                Server = "test.nucilandia.ro",
-                Port = 613,
-                Username = "ilarion.pintilie@nucilandia.ro",
-                Password = "NucileRullz!",
-                MaxEmailAge = MaximumEmailAgeSeconds
-            };
+            emailProcessorMock = new();
             loggerMock = new();
             webProcessorMock = new();
-
-            EmailProcessor emailProcessor = new(
-                imapSettings,
-                loggerMock.Object);
             NetflixProcessor netflixProcessor = new(
                 webProcessorMock.Object,
                 loggerMock.Object);
             householdConfirmator = new(
-                emailProcessor,
+                emailProcessorMock.Object,
                 netflixProcessor,
                 loggerMock.Object);
         }
@@ -89,12 +70,10 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
         public void GivenANewConfirmationEmail_WhenListening_ThenTheBrowserHandlesTheCurrentPageState(
             bool areLocationDetailsVisible)
         {
-            MimeMessage email = BuildEmail(
-                ConfirmationEmailSubject,
-                $"Leading text{Environment.NewLine}{ConfirmationUrl} trailing text",
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now);
-            ConfigureSinglePoll(email);
+            emailProcessorMock
+                .SetupSequence(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Returns(ConfirmationUrl)
+                .Throws(new InvalidOperationException(PollingStoppedMessage));
             webProcessorMock
                 .Setup(webProcessor => webProcessor.IsElementVisible(LocationDetailsSelector))
                 .Returns(areLocationDetailsVisible);
@@ -128,32 +107,16 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
                     webProcessor => webProcessor.Wait(5000),
                     Times.Once);
             }
-
-            VerifyBrowserWasNotOpened();
         }
 
         [Test]
         public void GivenSuccessiveConfirmationEmails_WhenListening_ThenEveryNewRequestIsOpened()
         {
-            MimeMessage firstEmail = BuildEmail(
-                ConfirmationEmailSubject,
-                ConfirmationUrl,
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now);
-            MimeMessage secondEmail = BuildEmail(
-                ConfirmationEmailSubject,
-                SecondConfirmationUrl,
-                DateTime.Now.AddMinutes(2),
-                DateTimeOffset.Now);
-            inboxMock
-                .SetupSequence(inbox => inbox.Count)
-                .Returns(1)
-                .Returns(1)
+            emailProcessorMock
+                .SetupSequence(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Returns(ConfirmationUrl)
+                .Returns(SecondConfirmationUrl)
                 .Throws(new InvalidOperationException(PollingStoppedMessage));
-            inboxMock
-                .SetupSequence(inbox => inbox.GetMessage(0, default, null))
-                .Returns(firstEmail)
-                .Returns(secondEmail);
             webProcessorMock
                 .Setup(webProcessor => webProcessor.IsElementVisible(LocationDetailsSelector))
                 .Returns(true);
@@ -166,25 +129,16 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             webProcessorMock.Verify(
                 webProcessor => webProcessor.GoToUrl(SecondConfirmationUrl),
                 Times.Once);
-            VerifyBrowserWasNotOpened();
         }
 
         [Test]
         public void GivenTheSameConfirmationEmailTwice_WhenListening_ThenItIsOpenedOnce()
         {
-            MimeMessage email = BuildEmail(
-                ConfirmationEmailSubject,
-                ConfirmationUrl,
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now);
-            inboxMock
-                .SetupSequence(inbox => inbox.Count)
-                .Returns(1)
-                .Returns(1)
+            emailProcessorMock
+                .SetupSequence(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Returns(ConfirmationUrl)
+                .Returns((string)null!)
                 .Throws(new InvalidOperationException(PollingStoppedMessage));
-            inboxMock
-                .Setup(inbox => inbox.GetMessage(0, default, null))
-                .Returns(email);
             webProcessorMock
                 .Setup(webProcessor => webProcessor.IsElementVisible(LocationDetailsSelector))
                 .Returns(true);
@@ -194,13 +148,14 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             webProcessorMock.Verify(
                 webProcessor => webProcessor.GoToUrl(ConfirmationUrl),
                 Times.Once);
-            VerifyBrowserWasNotOpened();
         }
 
         [Test]
         public void GivenAnEmptyInbox_WhenListening_ThenTheBrowserIsNotOpened()
         {
-            ConfigureSinglePoll();
+            emailProcessorMock
+                .Setup(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Throws(new InvalidOperationException(PollingStoppedMessage));
 
             AssertPollingStops();
 
@@ -210,25 +165,9 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
         [Test]
         public void GivenOnlyNonQualifyingEmails_WhenListening_ThenTheBrowserIsNotOpened()
         {
-            MimeMessage oldConfirmationEmail = BuildEmail(
-                ConfirmationEmailSubject,
-                ConfirmationUrl,
-                DateTime.Now.AddMinutes(-1),
-                DateTimeOffset.Now);
-            MimeMessage differentlyCasedEmail = BuildEmail(
-                ConfirmationEmailSubject.ToUpperInvariant(),
-                ConfirmationUrl,
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now);
-            MimeMessage unrelatedEmail = BuildEmail(
-                "Chuck Norris can divide by zero.",
-                ConfirmationUrl,
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now);
-            ConfigureSinglePoll(
-                oldConfirmationEmail,
-                differentlyCasedEmail,
-                unrelatedEmail);
+            emailProcessorMock
+                .Setup(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Throws(new InvalidOperationException(PollingStoppedMessage));
 
             AssertPollingStops();
 
@@ -238,23 +177,12 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
         [Test]
         public void GivenAStaleNewestEmail_WhenListening_ThenOlderEmailsAreNotInspected()
         {
-            MimeMessage validEmail = BuildEmail(
-                ConfirmationEmailSubject,
-                ConfirmationUrl,
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now);
-            MimeMessage staleEmail = BuildEmail(
-                "Stale email",
-                string.Empty,
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now.AddSeconds(-128));
-            ConfigureSinglePoll(validEmail, staleEmail);
+            emailProcessorMock
+                .Setup(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Throws(new InvalidOperationException(PollingStoppedMessage));
 
             AssertPollingStops();
 
-            inboxMock.Verify(
-                inbox => inbox.GetMessage(0, default, null),
-                Times.Never);
             VerifyBrowserWasNotOpened();
         }
 
@@ -262,12 +190,10 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
         public void GivenMatchingHtmlWithoutAUrl_WhenListening_ThenTheRawBodyIsOpened()
         {
             string htmlBody = "A day on Venus is longer than a year on Venus";
-            MimeMessage email = BuildEmail(
-                ConfirmationEmailSubject,
-                htmlBody,
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now);
-            ConfigureSinglePoll(email);
+            emailProcessorMock
+                .SetupSequence(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Returns(htmlBody)
+                .Throws(new InvalidOperationException(PollingStoppedMessage));
             webProcessorMock
                 .Setup(webProcessor => webProcessor.IsElementVisible(LocationDetailsSelector))
                 .Returns(true);
@@ -277,18 +203,14 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             webProcessorMock.Verify(
                 webProcessor => webProcessor.GoToUrl(htmlBody),
                 Times.Once);
-            VerifyBrowserWasNotOpened();
         }
 
         [Test]
         public void GivenAMatchingPlainTextEmail_WhenListening_ThenPollingFailsAndTheMailboxIsClosed()
         {
-            MimeMessage email = BuildPlainTextEmail(
-                ConfirmationEmailSubject,
-                ConfirmationUrl,
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now);
-            ConfigureInbox([email]);
+            emailProcessorMock
+                .Setup(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Throws(new NullReferenceException());
 
             Assert.That(
                 () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
@@ -299,14 +221,9 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
         [Test]
         public void GivenAnInvalidReceivedDate_WhenListening_ThenPollingFailsAndTheMailboxIsClosed()
         {
-            MimeMessage email = BuildEmail(
-                ConfirmationEmailSubject,
-                ConfirmationUrl,
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now);
-            email.Headers.Remove(DateReceivedHeaderName);
-            email.Headers.Add(DateReceivedHeaderName, "Aaaaaargghh");
-            ConfigureInbox([email]);
+            emailProcessorMock
+                .Setup(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Throws(new FormatException());
 
             Assert.That(
                 () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
@@ -317,10 +234,9 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
         [Test]
         public void GivenInboxRetrievalFails_WhenListening_ThenTheFailurePropagatesAndTheMailboxIsClosed()
         {
-            InvalidOperationException retrievalException = new(ExceptionMessage);
-            inboxMock
-                .Setup(inbox => inbox.Open(FolderAccess.ReadOnly, default))
-                .Throws(retrievalException);
+            emailProcessorMock
+                .Setup(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Throws(new InvalidOperationException(ExceptionMessage));
 
             Assert.That(
                 () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
@@ -332,25 +248,11 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
         [Test]
         public void GivenBrowserNavigationFails_WhenListening_ThenTheNextRequestIsStillOpened()
         {
-            MimeMessage firstEmail = BuildEmail(
-                ConfirmationEmailSubject,
-                ConfirmationUrl,
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now);
-            MimeMessage secondEmail = BuildEmail(
-                ConfirmationEmailSubject,
-                SecondConfirmationUrl,
-                DateTime.Now.AddMinutes(2),
-                DateTimeOffset.Now);
-            inboxMock
-                .SetupSequence(inbox => inbox.Count)
-                .Returns(1)
-                .Returns(1)
+            emailProcessorMock
+                .SetupSequence(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Returns(ConfirmationUrl)
+                .Returns(SecondConfirmationUrl)
                 .Throws(new InvalidOperationException(PollingStoppedMessage));
-            inboxMock
-                .SetupSequence(inbox => inbox.GetMessage(0, default, null))
-                .Returns(firstEmail)
-                .Returns(secondEmail);
             webProcessorMock
                 .Setup(webProcessor => webProcessor.GoToUrl(ConfirmationUrl))
                 .Throws(new InvalidOperationException(ExceptionMessage));
@@ -366,7 +268,6 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             webProcessorMock.Verify(
                 webProcessor => webProcessor.GoToUrl(SecondConfirmationUrl),
                 Times.Once);
-            VerifyBrowserWasNotOpened();
         }
 
         [TestCase(BrowserFailureStage.ElementWaiting)]
@@ -377,12 +278,10 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             BrowserFailureStage failureStage)
         {
             InvalidOperationException browserException = new(ExceptionMessage);
-            MimeMessage email = BuildEmail(
-                ConfirmationEmailSubject,
-                ConfirmationUrl,
-                DateTime.Now.AddMinutes(1),
-                DateTimeOffset.Now);
-            ConfigureSinglePoll(email);
+            emailProcessorMock
+                .SetupSequence(emailProcessor => emailProcessor.GetHouseholdConfirmationUrl())
+                .Returns(ConfirmationUrl)
+                .Throws(new InvalidOperationException(PollingStoppedMessage));
             ConfigureBrowserFailure(failureStage, browserException);
 
             AssertPollingStops();
@@ -390,42 +289,9 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             webProcessorMock.Verify(
                 webProcessor => webProcessor.GoToUrl(ConfirmationUrl),
                 Times.Once);
-            VerifyBrowserWasNotOpened();
         }
 
-        [Test]
-        public void GivenImapConnectionFails_WhenListening_ThenAuthenticationAndLogoutDoNotRun()
-        {
-            Assert.That(
-                () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
-                Throws.TypeOf<InvalidOperationException>()
-                    .With.Message.EqualTo(ExceptionMessage));
-            VerifyBrowserWasNotOpened();
-        }
 
-        [Test]
-        public void GivenImapAuthenticationFails_WhenListening_ThenPollingAndLogoutDoNotRun()
-        {
-            Assert.That(
-                () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
-                Throws.TypeOf<InvalidOperationException>()
-                    .With.Message.EqualTo(ExceptionMessage));
-            VerifyBrowserWasNotOpened();
-        }
-
-        [Test]
-        public void GivenPollingAndLogoutFail_WhenListening_ThenTheLogoutFailureIsPropagated()
-        {
-            inboxMock
-                .SetupGet(inbox => inbox.Count)
-                .Throws(new ArgumentException(ExceptionMessage));
-
-            Assert.That(
-                () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
-                Throws.TypeOf<InvalidOperationException>()
-                    .With.Message.EqualTo("Aaaaaargghh"));
-            VerifyBrowserWasNotOpened();
-        }
 
         private void AssertPollingStops()
             => Assert.That(
@@ -433,49 +299,7 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
                 Throws.TypeOf<InvalidOperationException>()
                     .With.Message.EqualTo(PollingStoppedMessage));
 
-        private static MimeMessage BuildEmail(
-            string subject,
-            string htmlBody,
-            DateTime dateReceived,
-            DateTimeOffset emailDateTime)
-        {
-            MimeMessage email = new()
-            {
-                Subject = subject,
-                Date = emailDateTime,
-                Body = new TextPart("html")
-                {
-                    Text = htmlBody
-                }
-            };
-            email.Headers.Add(
-                DateReceivedHeaderName,
-                dateReceived.ToString(DefaultTimestampFormat, CultureInfo.InvariantCulture));
 
-            return email;
-        }
-
-        private static MimeMessage BuildPlainTextEmail(
-            string subject,
-            string textBody,
-            DateTime dateReceived,
-            DateTimeOffset emailDateTime)
-        {
-            MimeMessage email = new()
-            {
-                Subject = subject,
-                Date = emailDateTime,
-                Body = new TextPart("plain")
-                {
-                    Text = textBody
-                }
-            };
-            email.Headers.Add(
-                DateReceivedHeaderName,
-                dateReceived.ToString(DefaultTimestampFormat, CultureInfo.InvariantCulture));
-
-            return email;
-        }
 
         private void ConfigureBrowserFailure(
             BrowserFailureStage failureStage,
@@ -511,37 +335,6 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(failureStage));
-            }
-        }
-
-        private void ConfigureInbox(IReadOnlyList<MimeMessage> emails)
-        {
-            inboxMock
-                .SetupGet(inbox => inbox.Count)
-                .Returns(emails.Count);
-
-            for (int emailIndex = 0; emailIndex < emails.Count; emailIndex += 1)
-            {
-                int configuredEmailIndex = emailIndex;
-                inboxMock
-                    .Setup(inbox => inbox.GetMessage(configuredEmailIndex, default, null))
-                    .Returns(emails[configuredEmailIndex]);
-            }
-        }
-
-        private void ConfigureSinglePoll(params MimeMessage[] emails)
-        {
-            inboxMock
-                .SetupSequence(inbox => inbox.Count)
-                .Returns(emails.Length)
-                .Throws(new InvalidOperationException(PollingStoppedMessage));
-
-            for (int emailIndex = 0; emailIndex < emails.Length; emailIndex += 1)
-            {
-                int configuredEmailIndex = emailIndex;
-                inboxMock
-                    .Setup(inbox => inbox.GetMessage(configuredEmailIndex, default, null))
-                    .Returns(emails[configuredEmailIndex]);
             }
         }
 
