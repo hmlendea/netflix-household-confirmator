@@ -201,7 +201,7 @@ dotnet run --project NetflixHouseholdConfirmator
 
 ### Test
 
-The NUnit suite uses Moq to isolate IMAP and browser automation dependencies, so it requires no live mailbox or browser:
+The NUnit unit and integration suites use Moq at external IMAP, browser, and logging boundaries. Integration tests compose the real application processors with MIME messages and the shipped configuration, so no live mailbox or browser is required:
 
 ```bash
 dotnet test
@@ -261,13 +261,14 @@ This script downloads and executes an external release helper from `https://raw.
 
 ## 🗂️ Project Structure
 
-The solution separates the executable application from its unit tests.
+The solution separates the executable application from its unit and integration tests.
 
 ### Projects and Packages
 
 | Project | Type | Purpose |
 |---------|------|---------|
 | [NetflixHouseholdConfirmator](NetflixHouseholdConfirmator/NetflixHouseholdConfirmator.csproj) | Console application | Monitors IMAP messages and confirms Netflix household requests |
+| [NetflixHouseholdConfirmator.IntegrationTests](NetflixHouseholdConfirmator.IntegrationTests/NetflixHouseholdConfirmator.IntegrationTests.csproj) | NUnit test project | Verifies configuration binding and the integrated mailbox-to-browser workflow with deterministic external boundaries |
 | [NetflixHouseholdConfirmator.UnitTests](NetflixHouseholdConfirmator.UnitTests/NetflixHouseholdConfirmator.UnitTests.csproj) | NUnit test project | Verifies configuration, logging, orchestration, email processing, and browser automation logic |
 
 ### Directories
@@ -275,6 +276,7 @@ The solution separates the executable application from its unit tests.
 | Directory | Purpose |
 |-----------|---------|
 | [NetflixHouseholdConfirmator](NetflixHouseholdConfirmator) | Application source and runtime configuration |
+| [NetflixHouseholdConfirmator.IntegrationTests](NetflixHouseholdConfirmator.IntegrationTests) | Integrated workflow and configuration tests |
 | [NetflixHouseholdConfirmator.UnitTests](NetflixHouseholdConfirmator.UnitTests) | Unit tests and coverage configuration |
 
 ## 🏗️ Architecture

@@ -2,7 +2,7 @@
 
 ## Test Architecture
 
-[NetflixHouseholdConfirmator.UnitTests.csproj](../NetflixHouseholdConfirmator.UnitTests/NetflixHouseholdConfirmator.UnitTests.csproj) references the executable project. NUnit supplies tests, Moq substitutes external boundaries, and Coverlet can collect coverage. Tests are unit-level: no live IMAP server, browser, WebDriver, or Netflix page is required.
+[NetflixHouseholdConfirmator.UnitTests.csproj](../NetflixHouseholdConfirmator.UnitTests/NetflixHouseholdConfirmator.UnitTests.csproj) and [NetflixHouseholdConfirmator.IntegrationTests.csproj](../NetflixHouseholdConfirmator.IntegrationTests/NetflixHouseholdConfirmator.IntegrationTests.csproj) reference the executable project. NUnit supplies tests, Moq substitutes external boundaries, and Coverlet can collect coverage. The integration suite composes the real orchestrator, processors, MIME messages, and shipped configuration while substituting IMAP, browser, and logging infrastructure. No live IMAP server, browser, WebDriver, or Netflix page is required.
 
 ## Behaviour Coverage
 
@@ -13,6 +13,8 @@
 | Browser confirmation | [NetflixProcessorTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/Processors/NetflixProcessorTests.cs) | Navigation, selector waiting, already-confirmed detection, click/wait behaviour, swallowed browser exceptions, and logging states. |
 | Settings | [BotSettingsTests.cs](../NetflixHouseholdConfirmator.UnitTests/Configuration/BotSettingsTests.cs), [DebugSettingsTests.cs](../NetflixHouseholdConfirmator.UnitTests/Configuration/DebugSettingsTests.cs) | Property retention, headless inverse logic, and screenshot enablement. |
 | Logging vocabulary | [MyOperationTests.cs](../NetflixHouseholdConfirmator.UnitTests/Logging/MyOperationTests.cs), [MyLogInfoKeyTests.cs](../NetflixHouseholdConfirmator.UnitTests/Logging/MyLogInfoKeyTests.cs) | Operation and key name contracts. |
+| Integrated mailbox-to-browser workflow | [HouseholdConfirmationIntegrationTests.cs](../NetflixHouseholdConfirmator.IntegrationTests/Service/HouseholdConfirmationIntegrationTests.cs) | MIME selection, URL forwarding, duplicate suppression, browser states and failures, IMAP lifecycle failures, polling failures, and cleanup. |
+| Shipped configuration | [ConfigurationIntegrationTests.cs](../NetflixHouseholdConfirmator.IntegrationTests/Configuration/ConfigurationIntegrationTests.cs) | Output copying and binding of every application-owned setting from the shipped JSON file. |
 
 ## Important Assertions
 
@@ -31,7 +33,7 @@ These assertions are compatibility evidence. They should be revisited before cha
 
 ## Verification Gaps
 
-The test suite does not exercise:
+The test suites do not exercise:
 
 - Real MailKit TLS negotiation, authentication, folder state, or MIME variations.
 - Real browser/WebDriver startup, Netflix markup, navigation timing, or selector compatibility.
@@ -48,6 +50,12 @@ Run all tests with:
 
 ```bash
 dotnet test
+```
+
+Run only integration tests with:
+
+```bash
+dotnet test NetflixHouseholdConfirmator.IntegrationTests/NetflixHouseholdConfirmator.IntegrationTests.csproj
 ```
 
 Collect Cobertura output with:

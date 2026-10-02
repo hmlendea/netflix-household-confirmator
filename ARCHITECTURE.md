@@ -13,7 +13,7 @@ This document records the current architecture of the Netflix Household Confirma
   - [Application Host](#application-host)
   - [Service Layer](#service-layer)
   - [Configuration And Logging](#configuration-and-logging)
-  - [Unit Tests](#unit-tests)
+    - [Automated Tests](#automated-tests)
 - [Data Architecture](#data-architecture)
 - [Interfaces And Integrations](#interfaces-and-integrations)
 - [Key Flows](#key-flows)
@@ -201,15 +201,18 @@ Boundary rules:
 - Credentials are configuration inputs and are not architectural domain state.
 - The password is passed to IMAP authentication but is not included in the logger information assembled by `EmailProcessor`.
 
-### Unit Tests
+### Automated Tests
 
 Paths:
+- [NetflixHouseholdConfirmator.IntegrationTests](NetflixHouseholdConfirmator.IntegrationTests)
 - [NetflixHouseholdConfirmator.UnitTests](NetflixHouseholdConfirmator.UnitTests)
 - [NetflixHouseholdConfirmator.UnitTests/Service](NetflixHouseholdConfirmator.UnitTests/Service)
 - [NetflixHouseholdConfirmator.UnitTests/Configuration](NetflixHouseholdConfirmator.UnitTests/Configuration)
 - [NetflixHouseholdConfirmator.UnitTests/Logging](NetflixHouseholdConfirmator.UnitTests/Logging)
 
 Responsibilities:
+- Verify the integrated mailbox-to-browser workflow with real application services and MIME messages.
+- Verify binding of the shipped configuration file.
 - Verify orchestration ordering and cleanup with Moq substitutes.
 - Verify IMAP filtering, extraction, authentication, and disposal behaviour.
 - Verify browser selector and failure behaviour.
@@ -383,7 +386,7 @@ The deployment unit is a single .NET 10 console executable with `appsettings.jso
 
 ## ✅ Testing And Verification
 
-The repository contains a separate NUnit unit-test project referencing the executable project. Moq substitutes isolate IMAP, browser, and logger boundaries. Tests cover configuration and logging values, orchestration ordering and cleanup, IMAP connection and message selection, URL extraction, and browser selector behaviour. They do not verify live IMAP access, real Netflix markup, a real browser driver, or process signal handling.
+The repository contains separate NUnit unit-test and integration-test projects referencing the executable project. Moq substitutes isolate IMAP, browser, and logger boundaries. Integration tests compose the real orchestrator and processors with real MIME messages and the shipped configuration. Tests cover configuration and logging values, orchestration ordering and cleanup, IMAP connection and message selection, URL extraction, browser selector behaviour, cross-component failure propagation, and resource cleanup. They do not verify live IMAP access, real Netflix markup, a real browser driver, or process signal handling.
 
 Execute the principal automated verification with:
 
@@ -450,6 +453,7 @@ The host expects a synchronous `ConfirmIncomingHouseholdUpdateRequests` operatio
 | Orchestration and integrations | [NetflixHouseholdConfirmator/Service](NetflixHouseholdConfirmator/Service) |
 | Logging vocabulary | [NetflixHouseholdConfirmator/Logging](NetflixHouseholdConfirmator/Logging) |
 | Runtime configuration | [NetflixHouseholdConfirmator/appsettings.json](NetflixHouseholdConfirmator/appsettings.json) |
+| Integration-test project | [NetflixHouseholdConfirmator.IntegrationTests](NetflixHouseholdConfirmator.IntegrationTests) |
 | Unit-test project | [NetflixHouseholdConfirmator.UnitTests](NetflixHouseholdConfirmator.UnitTests) |
 | Continuous integration | [.github/workflows/dotnet.yml](.github/workflows/dotnet.yml) |
 | Release publication | [release.sh](release.sh) |
