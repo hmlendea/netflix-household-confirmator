@@ -176,7 +176,7 @@ namespace NetflixHouseholdConfirmator.UnitTests.Service
                         OperationStatus.Failure.Name,
                         StringComparison.Ordinal)),
                     pollingException),
-                Times.Once);
+                Times.Exactly(2));
             emailProcessorMock.Verify(
                 emailProcessor => emailProcessor.LogOut(),
                 Times.Once);
@@ -205,7 +205,7 @@ namespace NetflixHouseholdConfirmator.UnitTests.Service
                         OperationStatus.Failure.Name,
                         StringComparison.Ordinal)),
                     confirmationException),
-                Times.Once);
+                Times.Exactly(2));
             emailProcessorMock.Verify(
                 emailProcessor => emailProcessor.LogOut(),
                 Times.Once);
@@ -234,7 +234,7 @@ namespace NetflixHouseholdConfirmator.UnitTests.Service
                     It.IsAny<Operation>(),
                     It.IsAny<OperationStatus>(),
                     It.IsAny<Exception>()),
-                Times.Never);
+                Times.Once);
         }
 
         [Test]
@@ -277,8 +277,8 @@ namespace NetflixHouseholdConfirmator.UnitTests.Service
 
             Assert.That(
                 () => householdConfirmator.ConfirmIncomingHouseholdUpdateRequests(),
-                Throws.TypeOf<InvalidOperationException>()
-                    .With.Message.EqualTo("Aaaaaargghh"));
+                Throws.TypeOf<ArgumentException>()
+                    .With.Message.EqualTo(ExceptionMessage));
             loggerMock.Verify(
                 logger => logger.Error(
                     It.IsAny<Operation>(),
@@ -287,7 +287,7 @@ namespace NetflixHouseholdConfirmator.UnitTests.Service
                         OperationStatus.Failure.Name,
                         StringComparison.Ordinal)),
                     pollingException),
-                Times.Once);
+                Times.Exactly(2));
         }
     }
 }
