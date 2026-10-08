@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -143,9 +142,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             {
                 if (email.Subject.Contains(HouseholdUpdateEmailSubject))
                 {
-                    DateTime emailDateTime = DateTime.Parse(
-                        email.Headers["DateReceived"],
-                        CultureInfo.InvariantCulture);
+                    DateTime emailDateTime = email.Date.DateTime;
 
                     if (emailDateTime > lastConfirmationEmailDateTime)
                     {
