@@ -222,3 +222,33 @@ NetflixProcessor → IWebProcessor → SeleniumWebProcessor → IWebDriver
 ```
 
 **Rule:** Concrete registrations only in `Program.CreateIOC()`. Services consume interfaces and typed settings.
+
+## Dependency Graph
+
+```mermaid
+flowchart LR
+    host[Program] --> orchestrator[HouseholdConfirmator]
+    orchestrator --> email[IEmailProcessor]
+    orchestrator --> netflix[INetflixProcessor]
+    email --> mailkit[MailKit IImapClient]
+    netflix --> web[IWebProcessor]
+    web --> selenium[Selenium adapter]
+    host --> logger[ILogger]
+    email --> logger
+    netflix --> logger
+```
+
+## Operational Constraints
+
+- The process polls continuously without a delay or cancellation mechanism.
+- Duplicate suppression is in-memory and resets after restart.
+- Multiple running instances have no coordination and can repeat external confirmations.
+- Mailbox connection and authentication are startup dependencies.
+- Netflix email text, URL format, and page selectors are external compatibility contracts.
+- Browser failures are logged but swallowed by `NetflixProcessor`.
+- The process has no durable state, health endpoint, metrics, or remote control surface.
+- Normal shutdown depends on external process termination; the listener itself has no stop signal.
+
+## Security Boundary
+
+The application authenticates only to the configured IMAP server. It does not request Netflix credentials; it follows a confirmation URL retrieved from email. The most important local security control is protecting `appsettings.json` and generated log/screenshot files. Vulnerability reporting instructions are in [SECURITY.md](../SECURITY.md).

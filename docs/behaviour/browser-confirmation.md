@@ -98,6 +98,31 @@ catch { logger.Error(..., OperationStatus.Failure, ...); }
 logger.Info(MyOperation.HouseholdConfirmation, OperationStatus.Success, "The household was successfully confirmed.");
 ```
 
+**Critical Issue:** The success log is written **regardless** of whether the browser interaction succeeded. A success log means only that the method reached its final log statement; it does not prove Netflix accepted the request.
+
+## Browser Confirmation Flow (Detailed)
+
+`NetflixProcessor` performs these operations in order:
+
+1. Navigate to the supplied string.
+2. Wait for either the confirmation button XPath `//button[@data-uia='set-primary-location-action']` or location-details XPath `//div[@data-uia='location-details']` to become visible.
+3. Query location-details visibility.
+4. If location details are not visible, click the confirmation button and wait 5,000 milliseconds.
+5. If location details are visible, skip clicking and finish.
+
+Any exception from navigation, waiting, visibility, clicking, or the fixed wait is logged as a failure and swallowed. The method then writes the success event regardless of whether the browser interaction succeeded. A success log therefore means only that the method reached its final log statement; it does not prove Netflix accepted the request.
+
+## Known Issues
+
+| Issue | Impact |
+|-------|--------|
+| Misleading success log | Success logged even when browser interaction fails |
+| No verification of Netflix acceptance | Click assumed to complete flow |
+| Hardcoded 5-second wait | May be too short/long; no dynamic wait |
+| Brittle XPath selectors | `data-uia` attributes may change |
+| Swallowed exceptions | Caller cannot distinguish success from failure |
+| No login handling | Assumes browser already authenticated to Netflix |
+
 **Critical Issue:** `Success` is logged **even after caught exception** — misleading log output.
 
 ## Return Value

@@ -57,7 +57,7 @@ Netflix Household Confirmator is a self-hosted .NET 10 console application that 
 
 ## Navigation Aids
 
-- **Start here** (newcomers): [quick-start.md](./quick-start.md) → [repository-overview.md](./repository-overview.md) → [runtime-behaviour.md](../docs/runtime-behaviour.md)
+- **Start here** (newcomers): [quick-start.md](./quick-start.md) → [repository-overview.md](./repository-overview.md) → [architecture.md](./architecture.md)
 - **Deep dive** (component owners): [components/](./components/) → [flows/](./flows/) → [behaviour/](./behaviour/)
 - **Flows** (debuggers): [flows/household-confirmation.md](./flows/household-confirmation.md) → [behaviour/email-processing.md](./behaviour/email-processing.md) → [behaviour/browser-confirmation.md](./behaviour/browser-confirmation.md)
 

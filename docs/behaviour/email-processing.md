@@ -98,6 +98,31 @@ private string ExtractConfirmationUrlFromEmail(MimeMessage email)
 | Condition | Return Value |
 |-----------|--------------|
 | Qualifying email found, URL extracted | Confirmation URL string |
+| Qualifying email found, no URL match | Entire HTML body (newlines removed) |
+| No qualifying email | `null` |
+
+## Email Selection Algorithm (Detailed)
+
+`EmailProcessor.RetrieveRecentEmails` opens the IMAP inbox read-only and reads messages from `Count - 1` down to zero. It stops at the first message whose `Date` is older than `ImapSettings.MaxEmailAge` seconds relative to `DateTime.Now`; it does not inspect older indexes after that point.
+
+`GetHouseholdConfirmationUrl` then examines the retrieved messages in newest-first order:
+
+1. The subject must contain the exact, case-sensitive text `How to update your Netflix Household`.
+2. The standard MIME `Date` header is used via `email.Date.DateTime` (previously used `email.Headers["DateReceived"]` which could be null).
+3. The received timestamp must be later than the processor's private `lastConfirmationEmailDateTime`.
+4. The timestamp is recorded **before** URL extraction, so an extraction result that is empty or malformed still advances the duplicate-suppression timestamp.
+5. The first matching message that satisfies these conditions wins; older matching messages are not considered in that call.
+6. No qualifying message returns `null`.
+
+`lastConfirmationEmailDateTime` starts at `DateTime.Now` when the singleton processor is constructed. Consequently, messages received before process startup are normally ignored, and duplicate suppression lasts only for the current process lifetime.
+
+A missing or malformed `DateReceived` header raises a parsing exception. Retrieval and parsing exceptions are not caught by `EmailProcessor`; they propagate to the listener and host.
+
+## URL Extraction Details
+
+The HTML body has `Environment.NewLine` removed, then is processed with the regular expression `.*(https://[^ ]*UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA).*` and replacement `$1`.
+
+This extracts a contiguous HTTPS value ending at the marker, provided the surrounding text matches the expression. If the pattern does not match, `Regex.Replace` returns the unchanged HTML body. The caller treats every non-null string as actionable, including an empty or whitespace string and the unchanged body fallback. This is a current implementation contract, not validation of a usable Netflix URL.
 | Qualifying email found, no URL match | Email body (HTML or text) |
 | No qualifying email | `null` |
 | Exception during processing | Propagates to caller |

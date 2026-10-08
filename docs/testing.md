@@ -138,6 +138,34 @@ Each stage tested to verify:
 - Mailbox is closed (LogOut called)
 - No crash screenshot (handled gracefully)
 
+## Important Assertions
+
+The tests intentionally capture current edge behaviour:
+
+- A non-null empty or whitespace URL is forwarded to `NetflixProcessor`.
+- A subject containing the expected phrase matches; an upper-case variant does not.
+- A matching email without the URL marker returns its unchanged HTML body.
+- A malformed `DateReceived` header raises `FormatException`.
+- Login failure prevents polling and does not call logout.
+- Polling failure logs and rethrows, then attempts logout.
+- Logout failure can replace an earlier polling exception.
+- Browser failures are swallowed and still produce the success log.
+
+These assertions are compatibility evidence. They should be revisited before changing the corresponding implementation, even when the behaviour appears undesirable.
+
+## Verification Gaps
+
+The test suites do not exercise:
+
+- Real MailKit TLS negotiation, authentication, folder state, or MIME variations.
+- Real browser/WebDriver startup, Netflix markup, navigation timing, or selector compatibility.
+- Process-level startup failures before the host `try` block.
+- WebDriver quit failures or screenshot path failures.
+- Cancellation, operating-system signals, restart recovery, or multiple-instance coordination.
+- Time-zone and culture edge cases beyond the invariant-format examples.
+- A missing `DateReceived` header separately from an invalid value.
+- Polling load, absence of backoff, or operational log file retention.
+
 ## Running Tests
 
 ```bash
