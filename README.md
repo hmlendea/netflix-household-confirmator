@@ -306,6 +306,10 @@ See the [contributing guidelines](./CONTRIBUTING.md) for details on how to repor
 
 For information on reporting security vulnerabilities, see [SECURITY.md](SECURITY.md).
 
+## 📜 Code of Conduct
+
+See the [Code of Conduct](./CODE_OF_CONDUCT.md) for the standards of conduct expected in all project spaces.
+
 ## 💝 Project Engagement
 
 Discovered a problem or have a suggestion? [Open an issue](https://github.com/hmlendea/netflix-household-confirmator/issues)!
