@@ -6,9 +6,22 @@
 |-------|-----------|-------|-----------|
 | Unit | NUnit 5 + Moq | Individual classes with mocked dependencies | `dotnet test` |
 | Integration | NUnit 5 + Moq | Orchestrator with real implementation, mocked infrastructure | `dotnet test` |
+| Architecture | NUnit 5 + ArchUnit.NET | Runtime dependency boundaries and production assembly/project references | `dotnet test` |
 | Manual | — | Full end-to-end with real IMAP and browser | Local only |
 
 ## Test Organisation
+
+### Architecture Tests
+
+The [architecture project](../NetflixHouseholdConfirmator.ArchitectureTests/NetflixHouseholdConfirmator.ArchitectureTests.csproj) loads the production assembly once and excludes test assemblies from its ArchUnit.NET model. Rule subjects must contain types, preventing vacuous success. The suite verifies that orchestration consumes processor contracts, email and browser adapters remain independent, runtime areas do not depend on the composition root, and supporting areas do not create reverse dependencies.
+
+Separate checks inspect compiled assembly references and the copied production project manifest for test dependencies and `InternalsVisibleTo` declarations. The application is a single executable project, not a Domain/Application/Infrastructure/API solution; no artificial layer matrix is imposed.
+
+Run the architecture suite independently:
+
+```bash
+dotnet test NetflixHouseholdConfirmator.ArchitectureTests/NetflixHouseholdConfirmator.ArchitectureTests.csproj
+```
 
 ### Unit Tests (`NetflixHouseholdConfirmator.UnitTests`)
 

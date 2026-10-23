@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="NetflixHouseholdConfirmator/NetflixHouseholdConfirmator.csproj" />
+  <Project Path="NetflixHouseholdConfirmator.ArchitectureTests/NetflixHouseholdConfirmator.ArchitectureTests.csproj" />
   <Project Path="NetflixHouseholdConfirmator.IntegrationTests/NetflixHouseholdConfirmator.IntegrationTests.csproj" />
   <Project Path="NetflixHouseholdConfirmator.UnitTests/NetflixHouseholdConfirmator.UnitTests.csproj" />
 </Solution>
