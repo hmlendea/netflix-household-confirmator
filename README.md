@@ -203,6 +203,8 @@ dotnet run --project NetflixHouseholdConfirmator
 
 ### Test
 
+The [architecture suite](NetflixHouseholdConfirmator.ArchitectureTests) uses NUnit and ArchUnit.NET to verify dependency boundaries, production assembly and project references, and the absence of `InternalsVisibleTo` declarations. Run it independently with `dotnet test NetflixHouseholdConfirmator.ArchitectureTests/NetflixHouseholdConfirmator.ArchitectureTests.csproj`.
+
 The NUnit unit and integration suites use Moq at external IMAP, browser, and logging boundaries. Integration tests compose the real application processors with MIME messages and the shipped configuration, so no live mailbox or browser is required:
 
 ```bash
@@ -263,13 +265,14 @@ This script downloads and executes an external release helper from `https://raw.
 
 ## 🗂️ Project Structure
 
-The solution separates the executable application from its unit and integration tests.
+The solution separates the executable application from its architecture, unit, and integration tests.
 
 ### Projects and Packages
 
 | Project | Type | Purpose |
 |---------|------|---------|
 | [NetflixHouseholdConfirmator](NetflixHouseholdConfirmator/NetflixHouseholdConfirmator.csproj) | Console application | Monitors IMAP messages and confirms Netflix household requests |
+| [NetflixHouseholdConfirmator.ArchitectureTests](NetflixHouseholdConfirmator.ArchitectureTests/NetflixHouseholdConfirmator.ArchitectureTests.csproj) | NUnit and ArchUnit.NET test project | Enforces runtime dependency boundaries and production reference constraints |
 | [NetflixHouseholdConfirmator.IntegrationTests](NetflixHouseholdConfirmator.IntegrationTests/NetflixHouseholdConfirmator.IntegrationTests.csproj) | NUnit test project | Verifies configuration binding and the integrated mailbox-to-browser workflow with deterministic external boundaries |
 | [NetflixHouseholdConfirmator.UnitTests](NetflixHouseholdConfirmator.UnitTests/NetflixHouseholdConfirmator.UnitTests.csproj) | NUnit test project | Verifies configuration, logging, orchestration, email processing, and browser automation logic |
 
@@ -278,6 +281,7 @@ The solution separates the executable application from its unit and integration 
 | Directory | Purpose |
 |-----------|---------|
 | [NetflixHouseholdConfirmator](NetflixHouseholdConfirmator) | Application source and runtime configuration |
+| [NetflixHouseholdConfirmator.ArchitectureTests](NetflixHouseholdConfirmator.ArchitectureTests) | Architecture dependency and production reference tests |
 | [NetflixHouseholdConfirmator.IntegrationTests](NetflixHouseholdConfirmator.IntegrationTests) | Integrated workflow and configuration tests |
 | [NetflixHouseholdConfirmator.UnitTests](NetflixHouseholdConfirmator.UnitTests) | Unit tests and coverage configuration |
 
