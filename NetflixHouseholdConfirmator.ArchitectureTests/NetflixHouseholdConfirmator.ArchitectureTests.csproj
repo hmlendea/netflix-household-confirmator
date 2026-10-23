@@ -9,15 +9,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="NUnit" Version="5.0.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="6.3.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.3.1" />
     <PackageReference Include="TngTech.ArchUnitNET.NUnit" Version="0.13.4" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../NetflixHouseholdConfirmator/NetflixHouseholdConfirmator.csproj" />
-    <None Include="../NetflixHouseholdConfirmator/NetflixHouseholdConfirmator.csproj"
-          Link="ProductionProjects/NetflixHouseholdConfirmator.csproj"
-          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../NetflixHouseholdConfirmator/NetflixHouseholdConfirmator.csproj" Link="ProductionProjects/NetflixHouseholdConfirmator.csproj" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
