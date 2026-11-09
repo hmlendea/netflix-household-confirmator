@@ -47,3 +47,14 @@ This project follows coordinated disclosure:
 2. A remediation plan is prepared and validated.
 3. Public disclosure is published after a fix, mitigation, or agreed risk decision is available.
 4. Credit is attributed in accordance with reporter preference and project policy.
+
+## 🔍 Automated Security Scanning
+
+The repository includes a [Security Scan workflow](.github/workflows/security.yml) that runs automatically:
+
+- **CodeQL Analysis**: Static application security testing (SAST) for C# code
+- **Dependency Vulnerability Scanning**: Checks all NuGet packages (including transitive dependencies) for known vulnerabilities
+- **Triggers**: On every push and pull request to `master`, and weekly on Sundays
+- **Results**: Published to GitHub Code Scanning (Security tab)
+
+The workflow requires `security-events: write` permission to upload SARIF results.

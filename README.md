@@ -1,6 +1,7 @@
 [![Donate](https://img.shields.io/badge/-%E2%99%A5%20Donate-%23ff69b4)](https://hmlendea.go.ro/funding)
 [![Latest Release](https://img.shields.io/github/v/release/hmlendea/netflix-household-confirmator)](https://github.com/hmlendea/netflix-household-confirmator/releases/latest)
 [![Build Status](https://github.com/hmlendea/netflix-household-confirmator/actions/workflows/dotnet.yml/badge.svg)](https://github.com/hmlendea/netflix-household-confirmator/actions/workflows/dotnet.yml)
+[![Security Scan](https://github.com/hmlendea/netflix-household-confirmator/actions/workflows/security.yml/badge.svg)](https://github.com/hmlendea/netflix-household-confirmator/actions/workflows/security.yml)
 [![License](https://img.shields.io/github/license/hmlendea/netflix-household-confirmator)](https://github.com/hmlendea/netflix-household-confirmator/blob/master/LICENSE)
 
 # Netflix Household Confirmator
@@ -228,6 +229,8 @@ dotnet restore
 dotnet build --no-restore
 dotnet test --no-build --verbosity normal
 ```
+
+The [Security Scan workflow](.github/workflows/security.yml) runs CodeQL analysis and checks for vulnerable packages on push, pull request, and a weekly schedule.
 
 ### Release
 
