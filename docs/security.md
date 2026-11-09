@@ -98,6 +98,16 @@ appsettings.json (600)
 - IMAP traffic (encrypted)
 - HTTPS to Netflix (encrypted)
 - Log files (local)
+
+## CI/CD Security Scanning
+
+The [Security Scan workflow](../.github/workflows/security.yml) provides automated security analysis:
+
+- **CodeQL Analysis**: Static analysis for C# code to detect security vulnerabilities
+- **Vulnerable Package Detection**: Checks all dependencies (including transitive) for known vulnerabilities using `dotnet list package --vulnerable --include-transitive`
+- **Schedule**: Runs on every push, pull request to `master`, and weekly on Sundays
+
+The workflow requires `security-events: write` permission to upload SARIF results to GitHub Code Scanning.
 - Crash screenshots (local)
 
 ## Vulnerability Assessment

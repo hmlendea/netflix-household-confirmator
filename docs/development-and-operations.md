@@ -56,7 +56,9 @@ dotnet run --project NetflixHouseholdConfirmator
 
 [release.sh](../release.sh) downloads and executes the maintainer's remote .NET 10 deployment helper. Its behaviour depends on network access and the current contents of that external script; inspect the helper before relying on a release.
 
-No workflow file is present in this checkout. Do not document CI behaviour as locally verified unless a workflow is added or obtained from repository history.
+The [.NET workflow](../.github/workflows/dotnet.yml) restores dependencies, compiles the project, and invokes the test target for pushes and pull requests targeting `master`.
+
+The [Security Scan workflow](../.github/workflows/security.yml) runs CodeQL analysis and checks for vulnerable packages on push, pull request, and a weekly schedule.
 
 ## Operational Constraints
 

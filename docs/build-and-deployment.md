@@ -82,6 +82,49 @@ jobs:
         run: dotnet test --no-build --verbosity normal
 ```
 
+### Security Scan (`.github/workflows/security.yml`)
+
+```yaml
+name: Security
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: 10.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Check for vulnerable packages
+      run: dotnet list package --vulnerable --include-transitive
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/init@v4
+      with:
+        languages: csharp
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+```
+
+Runs on push, pull request to `master`, and weekly on Sundays. Performs CodeQL static analysis and checks for vulnerable NuGet packages.
+
 ### Release Workflow (`.github/workflows/github-release.yml`)
 
 Triggered on version tags (`v*`):
