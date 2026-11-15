@@ -130,7 +130,7 @@ Runs on push, pull request to `master`, and weekly on Sundays. Performs CodeQL s
 Triggered on published GitHub releases:
 
 1. Extracts the .NET version from `NetflixHouseholdConfirmator/NetflixHouseholdConfirmator.csproj`
-2. Sets up .NET and builds self-contained release artefacts through the maintainer's release helper
+2. Sets up .NET and builds self-contained release artefacts
 3. Uploads `netflix-household-confirmator_*` as release assets through `softprops/action-gh-release@v2`
 
 ### NuGet Release (`.github/workflows/nuget-release.yml`)

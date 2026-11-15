@@ -362,7 +362,7 @@ The principal dependency rules are:
 
 ## 🚀 Deployment And Operations
 
-The deployment unit is a single .NET 10 console executable with `appsettings.json` beside it. The release script delegates publication to an external maintainer script, while continuous integration restores, builds, and tests on Ubuntu for pushes and pull requests targeting `master`. Runtime operation requires network access to the configured IMAP server and Netflix, plus a compatible browser and WebDriver.
+The deployment unit is a single .NET 10 console executable with `appsettings.json` beside it. Continuous integration restores, builds, and tests on Ubuntu for pushes and pull requests targeting `master`, and the GitHub Release workflow builds and publishes the release artefacts when a release is published. Runtime operation requires network access to the configured IMAP server and Netflix, plus a compatible browser and WebDriver.
 
 | Concern | Current Design | Architectural Consequence |
 |---------|----------------|---------------------------|
@@ -371,7 +371,7 @@ The deployment unit is a single .NET 10 console executable with `appsettings.jso
 | Mailbox access | One authenticated IMAP session | Mailbox availability and credentials are startup dependencies |
 | Browser access | One process-owned WebDriver | Browser and driver failures affect confirmation attempts and shutdown diagnostics |
 | Scaling | No coordination or distributed lock | Multiple instances are not a supported consistency model |
-| Release | `release.sh` invokes an external .NET 10 release script; the GitHub Release workflow builds and publishes the resulting assets when a release is published | Release behaviour depends on the remote helper and network availability |
+| Release | `.github/workflows/github-release.yml` builds self-contained artefacts and publishes them as GitHub Release assets when a release is published | Release behaviour depends on GitHub Actions and the remote workflow helper |
 | Diagnostics | Configurable logs and optional crash screenshot | Operators must manage filesystem permissions, retention, and sensitive output |
 
 ## 🛡️ Compatibility Contracts
@@ -416,7 +416,7 @@ dotnet test --collect:"XPlat Code Coverage" --results-directory NetflixHousehold
 - **Single-process ownership:** The application has no distributed coordination or durable checkpoint, so concurrent instances are not a supported consistency model.
 - **Failure-status ambiguity:** `NetflixProcessor` swallows browser exceptions and emits a success log afterwards, so a success event does not prove that Netflix accepted the request.
 - **File-based secrets:** The current configuration contract reads the IMAP password from `appsettings.json`; deployment must protect that file and avoid committing genuine credentials.
-- **External release helper:** Publication depends on a remote script retrieved by `release.sh`, which introduces an operational dependency outside this repository.
+- **External release helper:** Publication depends on the GitHub Release workflow, which retrieves a remote build helper, introducing an operational dependency outside this repository.
 
 ## 🔧 Extension Points
 
@@ -456,7 +456,7 @@ The host expects a synchronous `ConfirmIncomingHouseholdUpdateRequests` operatio
 | Integration-test project | [NetflixHouseholdConfirmator.IntegrationTests](NetflixHouseholdConfirmator.IntegrationTests) |
 | Unit-test project | [NetflixHouseholdConfirmator.UnitTests](NetflixHouseholdConfirmator.UnitTests) |
 | Continuous integration | [.github/workflows/dotnet.yml](.github/workflows/dotnet.yml) |
-| Release publication | [release.sh](release.sh), [.github/workflows/github-release.yml](.github/workflows/github-release.yml) |
+| Release publication | [.github/workflows/github-release.yml](.github/workflows/github-release.yml) |
 
 ## 📚 Related Documentation
 
