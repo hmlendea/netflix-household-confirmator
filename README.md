@@ -37,6 +37,7 @@ Netflix Household Confirmator is a .NET console application that monitors an IMA
   - [Continuous Integration](#continuous-integration)
   - [Release](#release)
   - [Dependencies](#dependencies)
+- [GitHub Actions](#️-github-actions)
 - [Project Structure](#project-structure)
   - [Projects and Packages](#projects-and-packages)
   - [Directories](#directories)
@@ -265,6 +266,14 @@ This script downloads and executes an external release helper from `https://raw.
 | `NUnit` | `4.4.0` | Development | Provides the unit-testing framework |
 | `NUnit.Analyzers` | `4.10.0` | Development | Analyses NUnit test correctness |
 | `NUnit3TestAdapter` | `6.0.0` | Development | Integrates NUnit with the .NET test host |
+
+## ⚙️ GitHub Actions
+
+| Workflow | Purpose | What it does |
+|----------|---------|--------------|
+| [ .NET ](https://github.com/hmlendea/netflix-household-confirmator/blob/master/.github/workflows/dotnet.yml) | Continuous integration | Restores dependencies, compiles the solution, and runs the test suites on pushes and pull requests targeting `master` |
+| [ Security Scan ](https://github.com/hmlendea/netflix-household-confirmator/blob/master/.github/workflows/security.yml) | Automated security scanning | Runs CodeQL analysis and checks NuGet dependencies for known vulnerabilities on pushes, pull requests targeting `master`, and a weekly schedule |
+| [ GitHub Release ](https://github.com/hmlendea/netflix-household-confirmator/blob/master/.github/workflows/github-release.yml) | Release packaging and publication | On a published GitHub release, determines the .NET version, builds self-contained artefacts through the maintainer's release helper, and uploads the release assets |
 
 ## 🗂️ Project Structure
 

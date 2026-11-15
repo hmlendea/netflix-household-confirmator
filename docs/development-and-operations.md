@@ -60,6 +60,8 @@ The [.NET workflow](../.github/workflows/dotnet.yml) restores dependencies, comp
 
 The [Security Scan workflow](../.github/workflows/security.yml) runs CodeQL analysis and checks for vulnerable packages on push, pull request, and a weekly schedule.
 
+The [Release Workflow](../.github/workflows/github-release.yml) builds release artifacts and publishes them as GitHub Release assets whenever a release is published.
+
 ## Operational Constraints
 
 - The process polls continuously without a delay or cancellation mechanism.

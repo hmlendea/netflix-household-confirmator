@@ -127,10 +127,11 @@ Runs on push, pull request to `master`, and weekly on Sundays. Performs CodeQL s
 
 ### Release Workflow (`.github/workflows/github-release.yml`)
 
-Triggered on version tags (`v*`):
-1. Build and test
-2. Publish self-contained executables for linux-x64, win-x64, osx-x64
-3. Create GitHub Release with artifacts
+Triggered on published GitHub releases:
+
+1. Extracts the .NET version from `NetflixHouseholdConfirmator/NetflixHouseholdConfirmator.csproj`
+2. Sets up .NET and builds self-contained release artefacts through the maintainer's release helper
+3. Uploads `netflix-household-confirmator_*` as release assets through `softprops/action-gh-release@v2`
 
 ### NuGet Release (`.github/workflows/nuget-release.yml`)
 
@@ -258,7 +259,7 @@ docker run -d \
 1. Update version in csproj or use GitVersion
 2. Commit changes
 3. Create and push tag: `git tag v1.0.0 && git push origin v1.0.0`
-4. GitHub Actions builds and creates release
+4. Publish a GitHub release from the tag; the GitHub Release workflow then builds the artefacts and attaches them as release assets
 5. Download artifacts from GitHub Release page
 6. Deploy to target environments
 
