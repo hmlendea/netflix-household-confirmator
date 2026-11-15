@@ -13,9 +13,14 @@ Integration models are the adapters that connect the application to external sys
 ### Connection Model
 
 ```csharp
-private readonly ImapClient imapClient = new();
+private ImapClient imapClient = new();
 
 // LogIn()
+if (imapClient.IsConnected)
+{
+    imapClient.Disconnect(true);
+}
+
 imapClient.Connect(imapSettings.Server, imapSettings.Port, true); // SSL
 imapClient.Authenticate(imapSettings.Username, imapSettings.Password);
 
@@ -24,32 +29,67 @@ imapClient.Disconnect(true);
 imapClient.Dispose();
 ```
 
+- One `ImapClient` instance is created at construction and reused for the process lifetime
+- `LogIn()` disconnects a still-connected client before reconnecting, so it can be re-entered by the recovery path
+
 ### Message Retrieval Model
 
 ```csharp
-// Search
-var query = SearchQuery.DeliveredAfter(
-    DateTime.UtcNow.Subtract(TimeSpan.FromSeconds(imapSettings.MaxEmailAge)));
-var uids = imapClient.Inbox.Search(query);
+IMailFolder inbox = imapClient.Inbox;
+inbox.Open(FolderAccess.ReadOnly);
 
-// Fetch summaries
-var summaries = imapClient.Inbox.Fetch(uids, 
-    MessageSummaryItems.UniqueId | 
-    MessageSummaryItems.Envelope | 
-    MessageSummaryItems.BodyStructure);
+for (int emailIndex = inbox.Count - 1; emailIndex >= 0; emailIndex -= 1)
+{
+    MimeMessage email = inbox.GetMessage(emailIndex);
 
-// Fetch full message (per candidate)
-var email = imapClient.Inbox.GetMessage(uid);
+    if ((DateTime.Now - email.Date).TotalSeconds > imapSettings.MaxEmailAge)
+    {
+        break;
+    }
+
+    emails.Add(email);
+}
 ```
+
+- Opens the mailbox read-only on every polling iteration, refreshing the message count
+- Reads newest to oldest by index and stops at the first message older than `MaxEmailAge`
+- No server-side search or summary fetch is issued
+
+### Session Recovery Model
+
+```csharp
+int attempt = 1;
+
+while (true)
+{
+    try
+    {
+        return ReadRecentEmails();
+    }
+    catch (Exception exception) when (
+        ImapFailurePolicy.IsRecoverable(exception) &&
+        attempt < MaximumRetrievalAttempts)
+    {
+        attempt += 1;
+        LogIn();
+    }
+}
+```
+
+- Up to three retrieval attempts
+- Recovery is limited to the exception types classified by `ImapFailurePolicy`
+- Retries are immediate; there is no delay or backoff
 
 ### Message Filtering Model
 
 ```csharp
-const string HouseholdUpdateEmailSubject = "How to update your Netflix Household";
+private static string HouseholdUpdateEmailSubject
+    => "How to update your Netflix Household";
 
 if (email.Subject.Contains(HouseholdUpdateEmailSubject))
 {
-    DateTime emailDateTime = email.Date.DateTime; // Standard MIME Date header
+    DateTimeOffset emailDateTime = email.Date; // Offset-bearing MIME Date header
+
     if (emailDateTime > lastConfirmationEmailDateTime)
     {
         lastConfirmationEmailDateTime = emailDateTime;
@@ -58,29 +98,39 @@ if (email.Subject.Contains(HouseholdUpdateEmailSubject))
 }
 ```
 
+- Duplicate suppression compares offset-bearing `DateTimeOffset` values, so a non-UTC `Date` header cannot shift the recorded instant into the future
+
 ### URL Extraction Model
 
 ```csharp
 private static string ConfirmationUrlPattern
     => ".*(https://[^ ]*UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA).*";
 
-private string ExtractConfirmationUrlFromEmail(MimeMessage email)
-{
-    string body = email.HtmlBody ?? email.TextBody ?? string.Empty;
-    return Regex.Replace(body, ConfirmationUrlPattern, "$1");
-}
+private static string ExtractConfirmationUrlFromEmail(MimeMessage email)
+    => Regex.Replace(
+        email.HtmlBody.Replace(Environment.NewLine, string.Empty),
+        ConfirmationUrlPattern,
+        "$1");
 ```
+
+- Only the HTML body is read; a message without an HTML body raises `NullReferenceException`
 
 ### Error Model
 
-| Exception | Source | Meaning |
-|-----------|--------|---------|
-| `ImapProtocolException` | MailKit | Protocol-level error |
-| `ImapCommandException` | MailKit | Command failed |
-| `SslHandshakeException` | MailKit/BouncyCastle | TLS failure |
-| `AuthenticationException` | MailKit | Invalid credentials |
-| `SocketException` | System | Network failure |
-| `ObjectDisposedException` | MailKit | Client disposed |
+| Exception | Source | Meaning | Recoverable |
+|-----------|--------|---------|-------------|
+| `ImapProtocolException` | MailKit | Protocol-level error, including an unexpected server disconnect | Yes |
+| `ProtocolException` | MailKit | Base protocol failure, including an unexpected server disconnect | Yes |
+| `ServiceNotConnectedException` | MailKit | Operation attempted on a severed session | Yes |
+| `ServiceNotAuthenticatedException` | MailKit | Session no longer authenticated | Yes |
+| `IOException` | System | I/O failure, including a connection timeout | Yes |
+| `SocketException` | System | Network failure | Yes |
+| `TimeoutException` | System | Operation timeout | Yes |
+| `ImapCommandException` | MailKit | The server rejected a command; not treated as recoverable | No |
+| `SslHandshakeException` | MailKit | TLS negotiation failure; not treated as recoverable | No |
+| `AuthenticationException` | System | Invalid credentials; not treated as recoverable | No |
+
+Recoverable failures trigger an immediate reconnect and retrieval retry, up to three attempts.
 
 ### Configuration Mapping
 
@@ -90,7 +140,7 @@ private string ExtractConfirmationUrlFromEmail(MimeMessage email)
 | `Port` | `Connect(..., port, ...)` |
 | `Username` | `Authenticate(username, ...)` |
 | `Password` | `Authenticate(..., password)` |
-| `MaxEmailAge` | `DeliveredAfter(Now - MaxEmailAge)` |
+| `MaxEmailAge` | Message-age cutoff applied while reading the newest-first message list |
 
 ## Browser Automation Integration (NetflixProcessor)
 
@@ -116,7 +166,7 @@ INetflixProcessor (app interface)
 ```csharp
 // Program.cs
 webDriver = WebDriverInitialiser.InitialiseAvailableWebDriver(
-    debugSettings.IsDebugMode, 
+    debugSettings.IsDebugMode,
     botSettings.PageLoadTimeout);
 ```
 
@@ -209,8 +259,8 @@ Browser                    →  Netflix Web UI (HTTPS)
 
 ### IMAP
 1. **No connection pooling** — Single `ImapClient` for entire process
-2. **No reconnection** — Connection loss crashes process
-3. **No IDLE support** — Polling only (75s interval, but currently tight loop)
+2. **Immediate recovery attempts** — A recoverable connection loss triggers up to three immediate reconnect-and-retry attempts before propagating
+3. **No IDLE support** — Polling only, with no delay between iterations
 4. **In-memory duplicate tracking** — Resets on restart
 
 ### Browser

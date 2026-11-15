@@ -82,22 +82,23 @@ public interface IEmailProcessor
 
 **Algorithm:**
 1. `ImapClient.Inbox.Open(FolderAccess.ReadOnly)`
-2. Search: `SearchQuery.DeliveredAfter(DateTime.UtcNow - MaxEmailAge)`
-3. Fetch: `MessageSummaryItems.UniqueId | MessageSummaryItems.Envelope | MessageSummaryItems.BodyStructure`
-4. For each message (newest first):
+2. Read messages newest-first by index, stopping at the first message older than `MaxEmailAge`
+3. For each message (newest first):
    - Fetch full `MimeMessage`
    - If `Subject.Contains("How to update your Netflix Household")`:
-     - Get `email.Date.DateTime`
+     - Read the offset-bearing `email.Date` value
      - If `emailDateTime > lastConfirmationEmailDateTime`:
        - Update `lastConfirmationEmailDateTime`
        - Return `ExtractConfirmationUrlFromEmail(email)`
-5. Return `null` if no qualifying email
+4. Return `null` if no qualifying email
 
-**Duplicate Suppression:** In-memory `lastConfirmationEmailDateTime` (resets on restart)
+**Duplicate Suppression:** In-memory `lastConfirmationEmailDateTime` (`DateTimeOffset`, resets on restart)
 
-**Logging:** `MyOperation.ListenForConfirmationRequests`
+**Recovery:** Recoverable retrieval failures reconnect through `LogIn()` and retry, up to three attempts.
 
-**Exceptions:** `ImapProtocolException`, `FormatException` (date parsing), `NullReferenceException` (missing headers)
+**Logging:** `MyOperation.ListenForConfirmationRequests`; a failed attempt logs through `MyOperation.EmailLogIn`
+
+**Exceptions:** `ImapProtocolException`, `IOException`, `SocketException`, `TimeoutException`, `ServiceNotConnectedException`, `ServiceNotAuthenticatedException` (recoverable, retried), `AuthenticationException` (propagated), `NullReferenceException` (message without an HTML body)
 
 ## INetflixProcessor
 

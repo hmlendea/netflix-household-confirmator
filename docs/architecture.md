@@ -62,19 +62,19 @@ This document elaborates on the root [ARCHITECTURE.md](../ARCHITECTURE.md) with 
 **Interface:** `IEmailProcessor` (`NetflixHouseholdConfirmator/Service/Processors/IEmailProcessor.cs`)
 
 **Responsibilities:**
-- `LogIn()`: Connects to IMAP server over SSL/TLS, authenticates with username/password
-- `LogOut()`: Disconnects and disposes the `IImapClient`
+- `LogIn()`: Disconnects any still-connected client, then connects over SSL/TLS and authenticates with username/password
+- `LogOut()`: Disconnects and disposes the `ImapClient`
 - `GetHouseholdConfirmationUrl()`: Retrieves recent emails, filters by subject, extracts URL from newest qualifying message
-- `RetrieveRecentEmails()`: Opens inbox read-only, iterates from newest to oldest, stops at first message older than `MaxEmailAge` seconds
-- `ExtractConfirmationUrlFromEmail()`: Removes newlines from HTML body, applies regex to extract URL ending with `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA`
+- `RetrieveRecentEmails()`: Opens inbox read-only, iterates from newest to oldest, stops at first message older than `MaxEmailAge` seconds; retries recoverable failures through `LogIn()`
+- `ExtractConfirmationUrlFromEmail()`: Removes newlines from the HTML body, applies regex to extract URL ending with `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA`
 
 **State:**
-- `lastConfirmationEmailDateTime` (private, initialised to `DateTime.Now` at construction) — tracks the most recently processed matching email timestamp for duplicate suppression within the process lifetime
+- `lastConfirmationEmailDateTime` (private `DateTimeOffset`, initialised to `DateTimeOffset.Now` at construction) — tracks the most recently processed matching email instant for duplicate suppression within the process lifetime
 
 **Email Selection Algorithm:**
 1. Retrieve messages from inbox (newest first) until `MaxEmailAge` cutoff
 2. Filter messages whose subject contains exact text "How to update your Netflix Household" (case-sensitive)
-3. Parse `email.Date.DateTime` (previously used `email.Headers["DateReceived"]` which could be null)
+3. Read the offset-bearing `email.Date` value
 4. Compare against `lastConfirmationEmailDateTime` — must be strictly greater
 5. Update `lastConfirmationEmailDateTime` **before** URL extraction
 6. Return extracted URL (or unchanged HTML body if regex doesn't match)
@@ -86,12 +86,11 @@ This document elaborates on the root [ARCHITECTURE.md](../ARCHITECTURE.md) with 
 - If no match, returns the entire HTML body (with newlines removed)
 
 **Error Propagation:**
-- IMAP connection/authentication failures: logged, rethrown
-- Message retrieval failures: propagate to caller
-- Date parsing failures (`FormatException`): propagate to caller
-- No internal retry or recovery
+- IMAP connection/authentication failures during `LogIn`: logged, rethrown
+- Recoverable retrieval failures: logged, session re-established via `LogIn()`, and the retrieval retried, up to `MaximumRetrievalAttempts` (3) attempts
+- Non-recoverable failures, and recoverable failures on the final attempt: propagate to caller
 
-**Dependencies:** `ImapSettings`, `ILogger`, `MailKit.Net.Imap.ImapClient`
+**Dependencies:** `ImapSettings`, `ILogger`, `MailKit.Net.Imap.ImapClient`, `ImapFailurePolicy`
 
 ### NetflixProcessor (Browser Automation Adapter)
 
@@ -139,7 +138,7 @@ IEmailProcessor (EmailProcessor) → IMAP mailbox
     ↓ (while true: GetHouseholdConfirmationUrl)
 RetrieveRecentEmails() → MimeMessage[]
     ↓ (filter: subject contains "How to update your Netflix Household")
-    ↓ (filter: email.Date.DateTime > lastConfirmationEmailDateTime)
+    ↓ (filter: email.Date > lastConfirmationEmailDateTime)
     ↓ (extract: regex on HTML body)
 URL string or null
     ↓ (if non-null)
@@ -156,7 +155,7 @@ loop
 | Contract | Current Behaviour |
 |----------|-------------------|
 | Subject matching | Exact case-sensitive substring "How to update your Netflix Household" |
-| Date source | `email.Date.DateTime` (standard MIME Date header) |
+| Date source | `email.Date` (offset-bearing MIME Date header) |
 | Duplicate suppression | In-memory, per-process, timestamp-based (`lastConfirmationEmailDateTime`) |
 | URL extraction | Regex capture group; fallback = entire HTML body (newlines removed) |
 | Null return | No qualifying message in current batch |
@@ -217,7 +216,7 @@ IHouseholdConfirmator (HouseholdConfirmator)
     ↓ depends on interfaces
 IEmailProcessor, INetflixProcessor, ILogger
     ↓ concrete implementations
-EmailProcessor → MailKit IImapClient
+EmailProcessor → MailKit ImapClient
 NetflixProcessor → IWebProcessor → SeleniumWebProcessor → IWebDriver
 ```
 

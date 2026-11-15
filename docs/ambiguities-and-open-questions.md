@@ -11,15 +11,15 @@
 - Accept current behaviour (single-instance appliance)
 
 ### 2. Retry and Backoff Strategy
-**Current:** No retry logic; all failures propagate to host.
-**Question:** Should transient failures (network, IMAP timeout) be retried?
+**Current:** Recoverable IMAP retrieval failures are retried in-process up to three immediate attempts, with no delay or backoff. Other failures propagate to the host.
+**Question:** Should retries use a backoff, and should non-IMAP failures be retried too?
 **Options:**
 - Polly policies with exponential backoff
 - Simple retry count with fixed delay
 - Leave to external orchestrator (systemd, Kubernetes)
 
 ### 3. Graceful Shutdown
-**Current:** No `CancellationToken`; `Thread.Sleep` in loop; `Ctrl+C` kills process.
+**Current:** No `CancellationToken`; `Ctrl+C` kills process.
 **Question:** Implement graceful shutdown with in-flight request completion?
 **Impact:** Requires `IHostedService` or manual `CancellationToken` plumbing.
 
@@ -54,9 +54,9 @@
 
 ## Known Technical Debt
 
-### 1. EmailProcessor Date Parsing (FIXED)
-**Was:** `DateTime.Parse(email.Headers["DateReceived"], CultureInfo.InvariantCulture)` — threw `ArgumentNullException` when header missing.
-**Fixed:** `email.Date.DateTime` — uses standard MIME Date header.
+### 1. EmailProcessor Date Handling (FIXED)
+**Was:** `DateTime.Parse(email.Headers["DateReceived"], CultureInfo.InvariantCulture)` — threw `ArgumentNullException` when the header was missing; a later revision read `email.Date.DateTime`, which discarded the offset.
+**Fixed:** `email.Date` — reads the offset-bearing MIME `Date` header value.
 **Status:** ✅ Resolved in current codebase.
 
 ### 2. Hardcoded Polling Interval
@@ -65,7 +65,7 @@
 **Should be:** Configurable via `BotSettings` or `ImapSettings`.
 
 ### 3. No Email UID Tracking
-**Issue:** Duplicate suppression uses `DateTime` comparison only.
+**Issue:** Duplicate suppression uses an offset-bearing `DateTimeOffset` comparison only.
 **Risk:** Clock skew, emails with same timestamp, restart loses state.
 **Better:** Track IMAP UIDs of processed messages.
 

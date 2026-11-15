@@ -145,11 +145,12 @@ public interface IEmailProcessor
 
 **State:**
 ```csharp
-private readonly ImapClient imapClient = new();
-private DateTime lastConfirmationEmailDateTime = DateTime.Now;
+private ImapClient imapClient = new();
+private DateTimeOffset lastConfirmationEmailDateTime = DateTimeOffset.Now;
 ```
 
 **LogIn():**
+- Disconnect any still-connected client: `if (imapClient.IsConnected) imapClient.Disconnect(true)`
 - Connect SSL/TLS: `imapClient.Connect(server, port, true)`
 - Authenticate: `imapClient.Authenticate(username, password)`
 - Logs: `EmailLogIn` with Server, Port, Username
@@ -160,22 +161,26 @@ private DateTime lastConfirmationEmailDateTime = DateTime.Now;
 - Logs: `EmailLogOut` with Server, Port, Username
 
 **GetHouseholdConfirmationUrl():**
-1. Search inbox: `DeliveredAfter(Now - MaxEmailAge)`
-2. Fetch summaries (UID, Envelope, BodyStructure)
+1. Open inbox read-only: `Inbox.Open(FolderAccess.ReadOnly)`
+2. Read messages newest-first by index, stopping at the first message older than `MaxEmailAge`
 3. For each message (newest first):
    - Fetch full MimeMessage
    - If subject contains "How to update your Netflix Household":
-     - Get `email.Date.DateTime` (standard MIME Date header)
+     - Read the offset-bearing `email.Date`
      - If newer than `lastConfirmationEmailDateTime`:
        - Update timestamp
        - Extract URL via regex
        - Return URL
 4. Return null
 
+**Retrieval Recovery:**
+- Recoverable failures (I/O, socket, timeout, protocol, stale session) reconnect through `LogIn()` and retry, up to three attempts
+- Non-recoverable failures, and recoverable failures on the final attempt, propagate
+
 **Duplicate Suppression:**
 - In-memory `lastConfirmationEmailDateTime`
 - Resets on process restart
-- Uses standard `email.Date.DateTime` (fixed from `email.Headers["DateReceived"]`)
+- Uses the offset-bearing `email.Date` value
 
 ### Dependencies
 
@@ -318,7 +323,7 @@ HouseholdConfirmator
 | `HouseholdConfirmator` | No cancellation support | Medium |
 | `HouseholdConfirmator` | Duplicate exception logging | Low |
 | `EmailProcessor` | In-memory duplicate suppression | Medium |
-| `EmailProcessor` | No IMAP retry/reconnect | Medium |
+| `EmailProcessor` | Immediate IMAP retries with no backoff | Low |
 | `NetflixProcessor` | Success logged after failure | High |
 | `NetflixProcessor` | No confirmation verification | High |
 | `NetflixProcessor` | Swallowed exceptions | High |

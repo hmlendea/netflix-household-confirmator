@@ -34,27 +34,27 @@ Retrieve Netflix household update confirmation emails.
 
 | Operation | IMAP Commands | Frequency |
 |-----------|---------------|-----------|
-| Connect | `CAPABILITY`, `STARTTLS`/`SSL`, `LOGIN` | Once at startup |
-| Search | `SEARCH SINCE <date>` | Per polling iteration |
-| Fetch Summary | `FETCH <uids> (UID ENVELOPE BODYSTRUCTURE)` | Per iteration |
-| Fetch Full | `FETCH <uid> (RFC822)` | Per qualifying email |
+| Connect | `CAPABILITY`, `STARTTLS`/`SSL`, `LOGIN` | Once at startup, and again after a recoverable session failure |
+| Mailbox selection | `EXAMINE INBOX` | Per polling iteration |
+| Fetch Full | `FETCH <index> (BODY.PEEK[])` | Per inspected message, newest to oldest |
 | Disconnect | `LOGOUT` | Once at shutdown |
 
 ### Message Processing
 
-1. **Search** — Messages delivered within `MaxEmailAge` seconds
-2. **Filter** — Subject contains "How to update your Netflix Household"
-3. **Deduplicate** — Compare `email.Date.DateTime` with `lastConfirmationEmailDateTime`
-4. **Extract** — Regex match for `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA` URL
+1. **Select** — Open `INBOX` read-only, refreshing the message count
+2. **Read** — Fetch messages newest to oldest until one is older than `MaxEmailAge`
+3. **Filter** — Subject contains "How to update your Netflix Household"
+4. **Deduplicate** — Compare `email.Date` with `lastConfirmationEmailDateTime` as offset-bearing values
+5. **Extract** — Regex match for the `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA` URL in the HTML body
 
 ### Error Handling
 
 | Error | Detection | Recovery |
 |-------|-----------|----------|
-| Connection failed | `SslHandshakeException`, `SocketException` | Process exits |
+| Connection lost | `ProtocolException`, `IOException`, `SocketException`, `TimeoutException` | Session re-established and the retrieval retried, up to three attempts |
+| Session invalid | `ServiceNotConnectedException`, `ServiceNotAuthenticatedException` | Session re-established and the retrieval retried, up to three attempts |
 | Auth failed | `AuthenticationException` | Process exits |
-| Search failed | `ImapProtocolException` | Process exits |
-| Fetch failed | `ImapProtocolException` | Process exits |
+| Retrieval failed on the final attempt | Recoverable exception | Process exits |
 
 ### Security
 
@@ -66,7 +66,7 @@ Retrieve Netflix household update confirmation emails.
 ### Limitations
 
 - No IDLE/push — polling only
-- No reconnection logic
+- Recovery is limited to three immediate attempts per iteration, with no backoff
 - Single folder (INBOX)
 - In-memory deduplication
 

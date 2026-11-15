@@ -9,7 +9,8 @@
 | Test area | File | Verified behaviour |
 |---|---|---|
 | Orchestration | [HouseholdConfirmatorTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/HouseholdConfirmatorTests.cs) | Login, start logging, repeated URL forwarding, null suppression, exception propagation, and logout cleanup. |
-| IMAP and email selection | [EmailProcessorTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/Processors/EmailProcessorTests.cs) | Connection/authentication/disconnection, read-only inbox access, newest-first selection, age cutoff, subject matching, timestamp duplicate suppression, line-break removal, URL extraction, and invalid-date failure. |
+| IMAP and email selection | [EmailProcessorTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/Processors/EmailProcessorTests.cs) | Construction of the processor with settings and a logger. |
+| IMAP failure classification | [EmailRecoveryPolicyTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/Processors/EmailRecoveryPolicyTests.cs) | Recoverable (I/O, socket, timeout, protocol, stale-session) versus non-recoverable failure classification used by the retrieval retry. |
 | Browser confirmation | [NetflixProcessorTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/Processors/NetflixProcessorTests.cs) | Navigation, selector waiting, already-confirmed detection, click/wait behaviour, swallowed browser exceptions, and logging states. |
 | Settings | [BotSettingsTests.cs](../NetflixHouseholdConfirmator.UnitTests/Configuration/BotSettingsTests.cs), [DebugSettingsTests.cs](../NetflixHouseholdConfirmator.UnitTests/Configuration/DebugSettingsTests.cs) | Property retention, headless inverse logic, and screenshot enablement. |
 | Logging vocabulary | [MyOperationTests.cs](../NetflixHouseholdConfirmator.UnitTests/Logging/MyOperationTests.cs), [MyLogInfoKeyTests.cs](../NetflixHouseholdConfirmator.UnitTests/Logging/MyLogInfoKeyTests.cs) | Operation and key name contracts. |
@@ -23,7 +24,7 @@ The tests intentionally capture current edge behaviour:
 - A non-null empty or whitespace URL is forwarded to `NetflixProcessor`.
 - A subject containing the expected phrase matches; an upper-case variant does not.
 - A matching email without the URL marker returns its unchanged HTML body.
-- A malformed `DateReceived` header raises `FormatException`.
+- Recoverable IMAP retrieval failures are classified for retry; unrelated failures are not.
 - Login failure prevents polling and does not call logout.
 - Polling failure logs and rethrows, then attempts logout.
 - Logout failure can replace an earlier polling exception.
@@ -36,12 +37,13 @@ These assertions are compatibility evidence. They should be revisited before cha
 The test suites do not exercise:
 
 - Real MailKit TLS negotiation, authentication, folder state, or MIME variations.
+- The retrieval retry against a live or simulated mailbox that severs the session; the retry loop itself is not executed by any test.
 - Real browser/WebDriver startup, Netflix markup, navigation timing, or selector compatibility.
 - Process-level startup failures before the host `try` block.
 - WebDriver quit failures or screenshot path failures.
 - Cancellation, operating-system signals, restart recovery, or multiple-instance coordination.
-- Time-zone and culture edge cases beyond the invariant-format examples.
-- A missing `DateReceived` header separately from an invalid value.
+- Time-zone and culture edge cases beyond the offset-bearing duplicate-suppression comparison.
+- A missing MIME `Date` header separately from an unparsable value.
 - Polling load, absence of backoff, or operational log file retention.
 
 ## Commands

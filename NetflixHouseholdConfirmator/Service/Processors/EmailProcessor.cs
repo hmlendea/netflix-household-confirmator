@@ -21,9 +21,12 @@ namespace NetflixHouseholdConfirmator.Service.Processors
     {
         private readonly ImapSettings imapSettings = imapSettings;
         private readonly ILogger logger = logger;
+
         private readonly ImapClient imapClient = new();
 
-        private DateTime lastConfirmationEmailDateTime = DateTime.Now;
+        private DateTimeOffset lastConfirmationEmailDateTime = DateTimeOffset.Now;
+
+        private static int MaximumRetrievalAttempts => 3;
 
         private static string ConfirmationUrlPattern
             => ".*(https://[^ ]*UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA).*";
@@ -35,6 +38,11 @@ namespace NetflixHouseholdConfirmator.Service.Processors
 
         public void LogIn()
         {
+            if (imapClient.IsConnected)
+            {
+                imapClient.Disconnect(true);
+            }
+
             IEnumerable<LogInfo> logInfos =
             [
                 new(MyLogInfoKey.Server, imapSettings.Server),
@@ -142,7 +150,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
             {
                 if (email.Subject.Contains(HouseholdUpdateEmailSubject))
                 {
-                    DateTime emailDateTime = email.Date.DateTime;
+                    DateTimeOffset emailDateTime = email.Date;
 
                     if (emailDateTime > lastConfirmationEmailDateTime)
                     {
@@ -162,6 +170,33 @@ namespace NetflixHouseholdConfirmator.Service.Processors
                 ConfirmationUrlReplacement);
 
         private IEnumerable<MimeMessage> RetrieveRecentEmails()
+        {
+            int attempt = 1;
+
+            while (true)
+            {
+                try
+                {
+                    return ReadRecentEmails();
+                }
+                catch (Exception exception) when (
+                    ImapFailurePolicy.IsRecoverable(exception) &&
+                    attempt < MaximumRetrievalAttempts)
+                {
+                    attempt += 1;
+
+                    logger.Error(
+                        MyOperation.EmailLogIn,
+                        OperationStatus.Failure,
+                        "The IMAP session was lost. Reconnecting to the IMAP server.",
+                        exception);
+
+                    LogIn();
+                }
+            }
+        }
+
+        private IEnumerable<MimeMessage> ReadRecentEmails()
         {
             IMailFolder inbox = imapClient.Inbox;
             inbox.Open(FolderAccess.ReadOnly);

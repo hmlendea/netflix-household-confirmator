@@ -76,7 +76,7 @@ flowchart TD
     orchestrator --> emailPort[IEmailProcessor]
     orchestrator --> netflixPort[INetflixProcessor]
     emailPort --> emailAdapter[EmailProcessor]
-    emailAdapter --> mailkit[MailKit IImapClient]
+    emailAdapter --> mailkit[MailKit ImapClient]
     netflixPort --> netflixAdapter[NetflixProcessor]
     netflixAdapter --> webPort[IWebProcessor]
     webPort --> selenium[SeleniumWebProcessor]
@@ -139,7 +139,7 @@ The principal runtime sequence is:
 |-----------|----------------|------------------------|-----------------------|
 | `Program` | Loads configuration, composes services, owns the WebDriver, and handles process-level failure and shutdown | Microsoft configuration and DI; NuciLog; Selenium initialiser | Process lifetime; composition root |
 | `HouseholdConfirmator` | Logs into IMAP, polls for URLs, delegates confirmation, and logs out | `IEmailProcessor`, `INetflixProcessor`, `ILogger` | Singleton resolved by the host |
-| `EmailProcessor` | Connects to IMAP, scans recent messages, filters matching subjects, extracts URLs, and tracks the last processed message time | `ImapSettings`, `ILogger`, `IImapClient` | Singleton; owns the injected IMAP client session |
+| `EmailProcessor` | Connects to IMAP, scans recent messages, filters matching subjects, extracts URLs, recovers from transient session failures, and tracks the last processed message time | `ImapSettings`, `ILogger`, `ImapClient` | Singleton; owns the IMAP client session |
 | `NetflixProcessor` | Navigates to the confirmation URL and confirms the household through page selectors | `IWebProcessor`, `ILogger` | Singleton; uses the process-owned WebDriver |
 | `NuciLogger` | Emits structured lifecycle, progress, failure, and diagnostic events | `NuciLoggerSettings` | Singleton registered by the host |
 | `SeleniumWebProcessor` | Provides browser interaction primitives used by `NetflixProcessor` | Process-owned `IWebDriver` | Singleton adapter over the WebDriver |
@@ -238,7 +238,7 @@ flowchart LR
 | Data or Store | Owner | Representation and Storage | Lifecycle or Consistency |
 |---------------|-------|----------------------------|--------------------------|
 | IMAP messages | `EmailProcessor` reads; IMAP provider persists | `MimeMessage` values retrieved from the read-only inbox | Recent messages only; scanning stops at the first message beyond `MaxEmailAge` |
-| Last confirmation email timestamp | `EmailProcessor` | Private `DateTime` field in process memory | Initialised at process start; prevents a matching message at or before the recorded timestamp from being returned again |
+| Last confirmation email timestamp | `EmailProcessor` | Private `DateTimeOffset` field in process memory | Initialised at process start; prevents a matching message at or before the recorded instant from being returned again |
 | Confirmation URL | `EmailProcessor` produces; `HouseholdConfirmator` consumes | String extracted from HTML using a fixed regular expression | Exists for the current polling iteration and is passed to `NetflixProcessor` |
 | Credentials and settings | `Program` binds; processors consume | Typed settings objects populated from `appsettings.json` | Process lifetime; changes require restart |
 | Logs | `NuciLogger` | Structured events sent to configured output, including optional file output | Retention is external to the application |
@@ -249,8 +249,8 @@ flowchart LR
 | Interface or Integration | Direction | Contract | Owner | Failure Semantics |
 |--------------------------|-----------|----------|-------|-------------------|
 | `IHouseholdConfirmator` | Inbound from host | `ConfirmIncomingHouseholdUpdateRequests()` | `HouseholdConfirmator` | Login and polling failures are logged and propagated; logout runs in `finally` after polling starts |
-| `IEmailProcessor` | Outbound from orchestration | `LogIn`, `GetHouseholdConfirmationUrl`, `LogOut` | `EmailProcessor` | Connection, authentication, and disconnection failures are logged and propagated; retrieval and date-parsing failures propagate without an `EmailProcessor` catch block |
-| MailKit `IImapClient` | Outbound | SSL/TLS IMAP connection, authentication, read-only inbox access | `EmailProcessor` | Connection, authentication, and disconnection exceptions are logged and propagated; inbox retrieval exceptions propagate directly |
+| `IEmailProcessor` | Outbound from orchestration | `LogIn`, `GetHouseholdConfirmationUrl`, `LogOut` | `EmailProcessor` | Connection and authentication failures are logged and propagated; recoverable retrieval failures are logged, re-established, and retried up to three attempts; non-recoverable failures propagate without an `EmailProcessor` catch block |
+| MailKit `ImapClient` | Outbound | SSL/TLS IMAP connection, authentication, read-only inbox access | `EmailProcessor` | Connection, authentication, and disconnection exceptions are logged and propagated; recoverable inbox retrieval exceptions trigger reconnection and retry |
 | `INetflixProcessor` | Outbound from orchestration | `ConfirmHousehold(string confirmationUrl)` | `NetflixProcessor` | Browser automation exceptions are logged and swallowed by the processor; a success log is subsequently emitted by the current implementation |
 | `IWebProcessor` | Outbound | URL navigation, element visibility wait, visibility query, click, and fixed wait | `NetflixProcessor` | Exceptions are handled by `NetflixProcessor` |
 | `ILogger` | Outbound | NuciLog operation and status events | Host and processors | Logging failures are not translated by the application |
@@ -290,7 +290,7 @@ sequenceDiagram
     C->>E: LogOut()
 ```
 
-`EmailProcessor` scans from the newest inbox message backwards and stops when message age exceeds `MaxEmailAge`. It requires a case-sensitive subject containing `How to update your Netflix Household`, then parses the `DateReceived` header with invariant culture and requires that value to be newer than its session-local `lastConfirmationEmailDateTime`. A malformed or absent header therefore terminates the polling iteration through a propagated parsing exception. The HTML body is normalised by removing `Environment.NewLine`, then passed through the `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA` URL pattern; when the pattern does not match, the unchanged HTML body is returned as the fallback. The orchestration layer forwards every non-null return value, including empty or whitespace strings, because the current contract tests treat any non-null value as a request.
+`EmailProcessor` scans from the newest inbox message backwards and stops when message age exceeds `MaxEmailAge`. It requires a case-sensitive subject containing `How to update your Netflix Household`, then reads the offset-bearing MIME `Date` value and requires that instant to be newer than its session-local `lastConfirmationEmailDateTime`. Comparing offset-bearing instants prevents a non-UTC `Date` header from shifting the recorded instant into the future and suppressing later messages. Recoverable retrieval failures — I/O, socket, timeout, protocol, and stale or unauthenticated session errors — are logged, re-established through `LogIn`, and retried up to three immediate attempts before propagating. The HTML body is normalised by removing `Environment.NewLine`, then passed through the `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA` URL pattern; when the pattern does not match, the unchanged HTML body is returned as the fallback. The orchestration layer forwards every non-null return value, including empty or whitespace strings, because the current contract tests treat any non-null value as a request.
 
 ## ⚙️ Domain-Specific Concerns
 
@@ -306,7 +306,7 @@ Email content and extracted URLs remain in process memory during polling. Logs a
 
 ### Error Handling
 
-`EmailProcessor` logs connection, authentication, and disconnection failures and rethrows them. `HouseholdConfirmator` logs polling or confirmation exceptions, rethrows them, and guarantees logout after successful login and listener initialisation. `NetflixProcessor` catches browser interaction exceptions and logs them without rethrowing; its subsequent success log is therefore not a verified external confirmation. `Program` catches aggregate and general exceptions, records fatal diagnostics, optionally saves a screenshot, quits the WebDriver, and records shutdown.
+`EmailProcessor` logs connection, authentication, and disconnection failures and rethrows them, and recovers from recoverable retrieval failures by reconnecting and retrying up to three attempts. `HouseholdConfirmator` logs polling or confirmation exceptions, rethrows them, and guarantees logout after successful login and listener initialisation. `NetflixProcessor` catches browser interaction exceptions and logs them without rethrowing; its subsequent success log is therefore not a verified external confirmation. `Program` catches aggregate and general exceptions, records fatal diagnostics, optionally saves a screenshot, quits the WebDriver, and records shutdown.
 
 ### Observability
 
@@ -353,7 +353,7 @@ The principal dependency rules are:
 
 | Dependency | Responsibility | Integration Boundary | Architectural Consequence |
 |------------|----------------|----------------------|---------------------------|
-| MailKit and `MailKit.Net` | IMAP transport and MIME message access | `EmailProcessor` and `IImapClient` | Mailbox protocol behaviour and exceptions shape the polling contract |
+| MailKit and `MailKit.Net` | IMAP transport and MIME message access | `EmailProcessor` and `ImapClient` | Mailbox protocol behaviour and exceptions shape the polling contract |
 | Microsoft.Extensions.Configuration | JSON configuration loading and binding | `Program.LoadConfiguration` | Settings are bound at startup from the working-directory configuration file |
 | Microsoft.Extensions.DependencyInjection | Service composition | `Program.CreateIOC` | Runtime services are registered as singletons and resolved from one provider |
 | NuciLog and NuciLog.Core | Structured logging contracts and implementation | `ILogger` and `NuciLogger` | Operation and status events are the principal diagnostic interface |

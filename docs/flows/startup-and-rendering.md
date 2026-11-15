@@ -193,6 +193,6 @@ service.ConfirmIncomingHouseholdUpdateRequests();
 
 1. **No health check** — Cannot verify startup success externally
 2. **WebDriver before DI** — Created outside container
-3. **No retry** — WebDriver/IMAP failures crash immediately
+3. **Immediate IMAP recovery only** — Recoverable IMAP failures retry three times without delay; WebDriver failures still terminate the process immediately
 4. **Static settings** — Not reloadable
 5. **No cancellation** — Cannot interrupt startup

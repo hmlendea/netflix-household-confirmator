@@ -92,15 +92,16 @@ catch (Exception ex)
 
 | Failure Point | Recovery Action |
 |---------------|-----------------|
-| IMAP connection failure | Process exits; no automatic retry |
+| IMAP connection failure | Session re-established in-process and the retrieval retried, up to three attempts |
 | IMAP authentication failure | Process exits; no automatic retry |
-| Email fetch failure | Loop iteration fails; next iteration retries |
+| Email retrieval failure | Retried against a fresh session for recoverable failures; otherwise the loop iteration fails |
+| Retrieval failure on the final attempt | Process exits; no further retry |
 | URL extraction failure | Email skipped; next email processed |
 | Browser login failure | Process exits; no automatic retry |
-| Confirmation click failure | Process exits; no automatic retry |
+| Confirmation click failure | Logged and swallowed; polling continues |
 | WebDriver crash | Process exits; no automatic retry |
 
-**No built-in retry logic** — All failures propagate to the host. External orchestration (systemd, Windows Service, container restart policy) must handle restarts.
+**Recovery scope** — `EmailProcessor` retries recoverable IMAP retrieval failures (I/O, socket, timeout, protocol, stale-session, and unauthenticated-session errors) by reconnecting and re-reading the mailbox. All other failures propagate to the host. External orchestration (systemd, Windows Service, container restart policy) must handle restarts beyond that scope.
 
 ## Exception Types
 
@@ -158,7 +159,7 @@ On fatal error, if `debugSettings.IsCrashScreenshotEnabled`:
 
 ## Known Gaps
 
-1. **No retry/backoff** — Transient network failures cause process exit
+1. **No backoff** — IMAP recovery retries three times immediately, then propagates; repeated failures hammer the server without delay
 2. **No circuit breaker** — Repeated failures hammer external services
 3. **No dead letter queue** — Failed emails are lost (no persistence)
 4. **No health endpoint** — Cannot probe liveness/readiness externally
@@ -166,7 +167,7 @@ On fatal error, if `debugSettings.IsCrashScreenshotEnabled`:
 
 ## Recommended Improvements
 
-1. Add `Polly` retry policies for IMAP and browser operations
+1. Add `Polly` retry policies with backoff for IMAP and browser operations
 2. Implement `IHostedService` / `CancellationToken` for graceful shutdown
 3. Add health check endpoint (if HTTP server added)
 4. Persist processed email IDs to survive restarts

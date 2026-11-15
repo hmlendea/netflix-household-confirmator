@@ -103,7 +103,8 @@ Examples:
 | LogOut disconnects and disposes | — | — |
 | GetHouseholdConfirmationUrl filters by subject | — | — |
 | GetHouseholdConfirmationUrl extracts URL via regex | — | — |
-| Duplicate suppression by Date | — | — |
+| IMAP failure classification (recoverable vs non-recoverable) | EmailRecoveryPolicyTests | — |
+| Duplicate suppression by offset-bearing Date | — | — |
 
 **Note:** EmailProcessor unit tests are minimal (construction only). Integration tests cover behaviour via mocked `IEmailProcessor`.
 

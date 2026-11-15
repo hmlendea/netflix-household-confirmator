@@ -51,7 +51,7 @@ Not currently. Single IMAP connection only.
 
 ### How does duplicate detection work?
 
-Tracks the timestamp of the last processed confirmation email (`email.Date.DateTime`). Resets on restart.
+Tracks the instant of the last processed confirmation email (`email.Date`, an offset-bearing value). Resets on restart.
 
 ## Browser / Automation
 
@@ -104,6 +104,8 @@ Install ChromeDriver/GeckoDriver matching your browser version. Ensure in PATH.
 ### IMAP connection timeout
 
 Check firewall, server/port, TLS support. Test: `openssl s_client -connect server:993`
+
+Transient timeouts are retried three times automatically. If they persist, check the upstream mail service.
 
 ### "Element not found" / timeout
 
@@ -189,9 +191,9 @@ No. Only communicates with your IMAP server and Netflix (via browser).
 
 **Known:** `Ctrl+C` kills process; no in-flight completion.
 
-### No retry logic
+### Retry logic
 
-**Known:** Transient failures crash process.
+**Known:** Non-recoverable failures crash the process; recoverable IMAP failures retry three times without delay.
 
 ### In-memory duplicate tracking
 

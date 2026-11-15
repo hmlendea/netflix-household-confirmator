@@ -89,4 +89,4 @@ docs/                                  # Detailed documentation
 2. **In-memory duplicate suppression** — `lastConfirmationEmailDateTime` resets on restart; acceptable for single-instance deployment
 3. **Interface-based processors** — `IEmailProcessor` and `INetflixProcessor` enable unit testing with mocks
 4. **Exception propagation** — Failures bubble up to the host; host logs fatal and optionally captures screenshot
-5. **No retry logic** — Transient failures (including IMAP timeouts) propagate immediately; no built-in reconnection
+5. **Bounded IMAP recovery** — Recoverable retrieval failures reconnect and retry up to three times; other failures propagate to the host, which logs fatal and optionally captures a screenshot

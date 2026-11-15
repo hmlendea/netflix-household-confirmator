@@ -10,8 +10,8 @@ The application maintains minimal in-memory state only. No persistent storage, d
 
 | Field | Type | Initial Value | Updated | Scope |
 |-------|------|---------------|---------|-------|
-| `imapClient` | `ImapClient` | `new()` | `LogIn()`/`LogOut()` | Process |
-| `lastConfirmationEmailDateTime` | `DateTime` | `DateTime.Now` | `GetHouseholdConfirmationUrl()` | Process |
+| `imapClient` | `ImapClient` | `new()` | Reconnected through `LogIn()` | Process |
+| `lastConfirmationEmailDateTime` | `DateTimeOffset` | `DateTimeOffset.Now` | `GetHouseholdConfirmationUrl()` | Process |
 
 ### Program State
 
@@ -101,12 +101,12 @@ Exception or Ctrl+C
 
 ## Duplicate Suppression
 
-**Mechanism:** Timestamp comparison in `EmailProcessor`
+**Mechanism:** Offset-bearing instant comparison in `EmailProcessor`
 
 ```csharp
-private DateTime lastConfirmationEmailDateTime = DateTime.Now;
+private DateTimeOffset lastConfirmationEmailDateTime = DateTimeOffset.Now;
 
-DateTime emailDateTime = email.Date.DateTime;
+DateTimeOffset emailDateTime = email.Date;
 if (emailDateTime > lastConfirmationEmailDateTime)
 {
     lastConfirmationEmailDateTime = emailDateTime;

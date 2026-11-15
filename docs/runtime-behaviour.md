@@ -29,15 +29,15 @@ The listener's `try` begins after login and start logging. Exceptions from polli
 `GetHouseholdConfirmationUrl` then examines the retrieved messages in newest-first order:
 
 - The subject must contain the exact, case-sensitive text `How to update your Netflix Household`.
-- The `DateReceived` header is parsed with invariant culture using `DateTime.Parse`.
-- The received timestamp must be later than the processor's private `lastConfirmationEmailDateTime`.
+- The MIME `Date` header is read as an offset-bearing `DateTimeOffset`.
+- The message instant must be later than the processor's private `lastConfirmationEmailDateTime`.
 - The timestamp is recorded before URL extraction, so an extraction result that is empty or malformed still advances the duplicate-suppression timestamp.
 - The first matching message that satisfies these conditions wins; older matching messages are not considered in that call.
 - No qualifying message returns `null`.
 
-`lastConfirmationEmailDateTime` starts at `DateTime.Now` when the singleton processor is constructed. Consequently, messages received before process startup are normally ignored, and duplicate suppression lasts only for the current process lifetime.
+`lastConfirmationEmailDateTime` starts at `DateTimeOffset.Now` when the singleton processor is constructed. Consequently, messages received before process startup are normally ignored, and duplicate suppression lasts only for the current process lifetime. Comparing offset-bearing values prevents a non-UTC `Date` header from being reinterpreted as local time and shifting the recorded instant into the future, which would suppress subsequent messages.
 
-A missing or malformed `DateReceived` header raises a parsing exception. Retrieval and parsing exceptions are not caught by `EmailProcessor`; they propagate to the listener and host.
+`RetrieveRecentEmails` retries a recoverable retrieval failure up to three attempts. A recoverable failure is an I/O, socket, or timeout error, a `ProtocolException`, or a stale or unauthenticated session. Recovery logs the failure, re-establishes the session through `LogIn()`, and reads the mailbox again. A non-recoverable failure, or a recoverable failure on the final attempt, propagates to the listener and host.
 
 ## URL Extraction
 
@@ -60,10 +60,10 @@ Any exception from navigation, waiting, visibility, clicking, or the fixed wait 
 ## Resource Ownership
 
 - `Program` owns WebDriver creation and calls `Quit` in its final shutdown path.
-- `EmailProcessor` owns the injected `IImapClient` session and disconnects and disposes it in `LogOut` after successful disconnect.
+- `EmailProcessor` owns its `ImapClient` session, reconnects it through `LogIn` when a recoverable failure occurs, and disconnects and disposes it in `LogOut` after a successful disconnect.
 - `HouseholdConfirmator` owns the login/poll/logout ordering but not the mailbox or browser implementations.
 - `NetflixProcessor` owns Netflix-specific selectors and browser interaction policy, but not WebDriver creation.
 
 ## Change Impact
 
-Changes to the email subject, `DateReceived` representation, URL marker, or HTML layout affect [EmailProcessor.cs](../NetflixHouseholdConfirmator/Service/Processors/EmailProcessor.cs) and [EmailProcessorTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/Processors/EmailProcessorTests.cs). Changes to Netflix selectors or confirmation states affect [NetflixProcessor.cs](../NetflixHouseholdConfirmator/Service/Processors/NetflixProcessor.cs) and [NetflixProcessorTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/Processors/NetflixProcessorTests.cs). Changes to lifecycle ordering affect the interfaces, [HouseholdConfirmator.cs](../NetflixHouseholdConfirmator/Service/HouseholdConfirmator.cs), and [HouseholdConfirmatorTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/HouseholdConfirmatorTests.cs).
+Changes to the email subject, MIME `Date` representation, URL marker, or HTML layout affect [EmailProcessor.cs](../NetflixHouseholdConfirmator/Service/Processors/EmailProcessor.cs) and [EmailProcessorTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/Processors/EmailProcessorTests.cs). Changes to Netflix selectors or confirmation states affect [NetflixProcessor.cs](../NetflixHouseholdConfirmator/Service/Processors/NetflixProcessor.cs) and [NetflixProcessorTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/Processors/NetflixProcessorTests.cs). Changes to lifecycle ordering affect the interfaces, [HouseholdConfirmator.cs](../NetflixHouseholdConfirmator/Service/HouseholdConfirmator.cs), and [HouseholdConfirmatorTests.cs](../NetflixHouseholdConfirmator.UnitTests/Service/HouseholdConfirmatorTests.cs).
