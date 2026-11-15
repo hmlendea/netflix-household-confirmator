@@ -371,7 +371,7 @@ The deployment unit is a single .NET 10 console executable with `appsettings.jso
 | Mailbox access | One authenticated IMAP session | Mailbox availability and credentials are startup dependencies |
 | Browser access | One process-owned WebDriver | Browser and driver failures affect confirmation attempts and shutdown diagnostics |
 | Scaling | No coordination or distributed lock | Multiple instances are not a supported consistency model |
-| Release | `release.sh` invokes an external .NET 10 release script | Release behaviour depends on the remote helper and network availability |
+| Release | `release.sh` invokes an external .NET 10 release script; the GitHub Release workflow builds and publishes the resulting assets when a release is published | Release behaviour depends on the remote helper and network availability |
 | Diagnostics | Configurable logs and optional crash screenshot | Operators must manage filesystem permissions, retention, and sensitive output |
 
 ## 🛡️ Compatibility Contracts
@@ -456,7 +456,7 @@ The host expects a synchronous `ConfirmIncomingHouseholdUpdateRequests` operatio
 | Integration-test project | [NetflixHouseholdConfirmator.IntegrationTests](NetflixHouseholdConfirmator.IntegrationTests) |
 | Unit-test project | [NetflixHouseholdConfirmator.UnitTests](NetflixHouseholdConfirmator.UnitTests) |
 | Continuous integration | [.github/workflows/dotnet.yml](.github/workflows/dotnet.yml) |
-| Release publication | [release.sh](release.sh) |
+| Release publication | [release.sh](release.sh), [.github/workflows/github-release.yml](.github/workflows/github-release.yml) |
 
 ## 📚 Related Documentation
 

@@ -209,7 +209,8 @@ dotnet test --filter "FullyQualifiedName~HouseholdConfirmatorTests.GivenAConfirm
 - Restore
 - Build
 - Test (all projects)
-- Publish (on release tags)
+
+Release artefacts are built and published by [`.github/workflows/github-release.yml`](../.github/workflows/github-release.yml) when a GitHub release is published.
 
 ## Known Test Gaps
 
