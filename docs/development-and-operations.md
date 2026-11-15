@@ -26,7 +26,7 @@ flowchart LR
     host[Program] --> orchestrator[HouseholdConfirmator]
     orchestrator --> email[IEmailProcessor]
     orchestrator --> netflix[INetflixProcessor]
-    email --> mailkit[MailKit IImapClient]
+    email --> mailkit[MailKit ImapClient]
     netflix --> web[IWebProcessor]
     web --> selenium[Selenium adapter]
     host --> logger[ILogger]

@@ -129,10 +129,11 @@ while (true)
 ## Concurrency Recommendations
 
 1. **Add polling delay:** `Thread.Sleep(TimeSpan.FromSeconds(75))`
-2. **Add cancellation:** `CancellationToken` for graceful shutdown
-3. **Consider async:** `async Task Main` with `await` for I/O
-4. **Add health check:** Background thread for liveness probe
-5. **Consider `IHostedService`:** Proper lifecycle management
+2. **Add backoff to IMAP recovery:** the current retry is immediate and bounded to three attempts
+3. **Add cancellation:** `CancellationToken` for graceful shutdown
+4. **Consider async:** `async Task Main` with `await` for I/O
+5. **Add health check:** Background thread for liveness probe
+6. **Consider `IHostedService`:** Proper lifecycle management
 
 ## Testing Concurrency
 

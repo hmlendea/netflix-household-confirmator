@@ -60,12 +60,12 @@ while (true)
 
 ```
 GetHouseholdConfirmationUrl()
-├── Search inbox: DeliveredAfter(Now - MaxEmailAge)
-├── Fetch summaries (UID, Envelope, BodyStructure)
+├── Open INBOX read-only (refreshes Count)
+├── Read messages newest to oldest until older than MaxEmailAge
 ├── For each message (newest first):
 │   ├── Fetch full MimeMessage
 │   ├── If Subject.Contains("How to update your Netflix Household"):
-│   │   ├── emailDateTime = email.Date.DateTime
+│   │   ├── emailDateTime = email.Date
 │   │   ├── If emailDateTime > lastConfirmationEmailDateTime:
 │   │   │   ├── lastConfirmationEmailDateTime = emailDateTime
 │   │   │   ├── Extract URL via regex
@@ -140,10 +140,11 @@ Any Exception in Loop
 
 | Scenario | Detection | Handling |
 |----------|-----------|----------|
-| IMAP connection lost | `ImapProtocolException` in search/fetch | Propagates → LogOut → Process exit |
+| IMAP connection lost | `ProtocolException`, `IOException`, or similar in the retrieval | Reconnect and retry, up to three attempts; then propagate → LogOut → Process exit |
+| Retrieval still failing on the final attempt | Recoverable exception | Propagates → LogOut → Process exit |
 | Auth expired | `AuthenticationException` | Propagates → LogOut → Process exit |
 | No qualifying email | `GetHouseholdConfirmationUrl` returns null | Continue loop |
-| Duplicate email | Timestamp check | Skip, continue loop |
+| Duplicate email | Offset-bearing timestamp check | Skip, continue loop |
 | URL extraction fails | Regex returns body | Navigate to body (likely fails) |
 | Browser navigation fails | `WebDriverException` in `GoToUrl` | Swallowed, log Success, continue |
 | Element not found | `NoSuchElementException` in wait | Swallowed, log Success, continue |
@@ -203,7 +204,7 @@ EmailLogOut:Started → EmailLogOut:Success
 2. **Misleading success logs** — Success logged even after caught exception
 3. **No confirmation verification** — Click assumed successful
 4. **Swallowed browser exceptions** — Orchestrator unaware of failures
-5. **No retry logic** — Transient failures crash process
+5. **Immediate retries** — Recoverable IMAP failures are retried three times without delay; non-recoverable failures crash the process
 6. **No graceful shutdown** — Cannot stop cleanly
 7. **In-memory duplicate tracking** — Resets on restart
 8. **No login handling** — Assumes authenticated browser session

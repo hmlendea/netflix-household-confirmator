@@ -14,46 +14,65 @@ The email processing behaviour covers IMAP message retrieval, filtering for Netf
 - Established once via `LogIn()` at startup
 - Single `ImapClient` instance reused
 - SSL/TLS on port 993 (configurable)
+- `LogIn()` disconnects a still-connected client before reconnecting, so recovery can re-enter it
 
 ### Search Criteria
 ```csharp
-var query = SearchQuery.DeliveredAfter(
-    DateTime.UtcNow.Subtract(TimeSpan.FromSeconds(imapSettings.MaxEmailAge)));
+IMailFolder inbox = imapClient.Inbox;
+inbox.Open(FolderAccess.ReadOnly);
 ```
 
-- `MaxEmailAge` default: 1800 seconds (30 minutes)
-- Searches `INBOX` folder only
-- Returns messages delivered within the time window
+- Opens `INBOX` read-only on every polling iteration
+- Re-selects the mailbox, so the message count is refreshed each iteration
+- No server-side search query is issued
 
 ### Fetch Strategy
 ```csharp
-var summaries = imapClient.Inbox.Fetch(
-    uids,
-    MessageSummaryItems.UniqueId |
-    MessageSummaryItems.Envelope |
-    MessageSummaryItems.BodyStructure);
+for (int emailIndex = inbox.Count - 1; emailIndex >= 0; emailIndex -= 1)
+{
+    MimeMessage email = inbox.GetMessage(emailIndex);
+
+    if ((DateTime.Now - email.Date).TotalSeconds > imapSettings.MaxEmailAge)
+    {
+        break;
+    }
+
+    emails.Add(email);
+}
 ```
 
-- Fetches minimal metadata first (UID, envelope, body structure)
-- Full message fetched only for qualifying candidates
+- Reads messages from newest to oldest by index
+- Fetches the full `MimeMessage` for every inspected message
+- Stops at the first message older than `MaxEmailAge`, so older indexes are never fetched
+- Does not scan further indexes after the stop point
+
+### Session Recovery
+
+`RetrieveRecentEmails()` retries a failed retrieval up to three attempts. When the failure is recoverable — an I/O, socket, or timeout error, a `ProtocolException`, or a `ServiceNotConnectedException`/`ServiceNotAuthenticatedException` — the processor logs the failure, calls `LogIn()` again, and re-reads the mailbox. A non-recoverable failure, or a failure on the final attempt, propagates to the caller.
+
+- Connection loss no longer terminates the process on the first failure
+- Retries are immediate; no delay or exponential backoff is applied
+- A failed attempt re-fetches from the newest index, so no partial result is reused
 
 ## Filtering
 
 ### Subject Match
 ```csharp
-const string HouseholdUpdateEmailSubject = "How to update your Netflix Household";
+private static string HouseholdUpdateEmailSubject
+    => "How to update your Netflix Household";
+
 if (email.Subject.Contains(HouseholdUpdateEmailSubject))
 ```
 
 - Case-sensitive substring match
-- Matches exact Netflix email subject line
+- Matches the Netflix email subject line
 - No regex — simple string containment
 
 ### Duplicate Suppression
 ```csharp
-private DateTime lastConfirmationEmailDateTime = DateTime.Now;
+private DateTimeOffset lastConfirmationEmailDateTime = DateTimeOffset.Now;
 
-DateTime emailDateTime = email.Date.DateTime;
+DateTimeOffset emailDateTime = email.Date;
 if (emailDateTime > lastConfirmationEmailDateTime)
 {
     lastConfirmationEmailDateTime = emailDateTime;
@@ -61,10 +80,12 @@ if (emailDateTime > lastConfirmationEmailDateTime)
 }
 ```
 
-- Tracks newest processed email timestamp
+- Tracks the newest processed message instant as a `DateTimeOffset`
+- Uses the standard MIME `Date` header (`email.Date`), which carries its own offset
+- The offset-bearing comparison prevents a non-UTC `Date` header from shifting the value into the future and suppressing later messages
+- The timestamp is recorded before extraction, so a non-matching extraction still advances suppression
 - In-memory only — resets on process restart
-- Uses standard MIME `Date` header (`email.Date.DateTime`)
-- **Fixed:** Previously used `email.Headers["DateReceived"]` which could be null
+- **Fixed:** Previously used `email.Headers["DateReceived"]`, which could be null; a later revision used `email.Date.DateTime`, which discarded the offset
 
 ## URL Extraction
 
@@ -82,37 +103,38 @@ private static string ConfirmationUrlReplacement => "$1";
 
 ### Extraction Method
 ```csharp
-private string ExtractConfirmationUrlFromEmail(MimeMessage email)
-{
-    string body = email.HtmlBody ?? email.TextBody ?? string.Empty;
-    return Regex.Replace(body, ConfirmationUrlPattern, ConfirmationUrlReplacement);
-}
+private static string ExtractConfirmationUrlFromEmail(MimeMessage email)
+    => Regex.Replace(
+        email.HtmlBody.Replace(Environment.NewLine, string.Empty),
+        ConfirmationUrlPattern,
+        ConfirmationUrlReplacement);
 ```
 
-- Prefers HTML body, falls back to plain text
-- Returns full matched URL or original body if no match
-- No validation that result is a valid URL
+- Processes the HTML body with `Environment.NewLine` removed
+- Returns the matched URL, or the unchanged HTML body when the pattern does not match
+- No validation that the result is a usable Netflix URL
 
 ## Return Values
 
 | Condition | Return Value |
 |-----------|--------------|
 | Qualifying email found, URL extracted | Confirmation URL string |
-| Qualifying email found, no URL match | Email body (HTML or text) |
+| Qualifying email found, no URL match | Unchanged HTML body |
 | No qualifying email | `null` |
-| Exception during processing | Propagates to caller |
+| Non-recoverable or final-attempt failure | Propagates to caller |
 
 ## Error Scenarios
 
 | Scenario | Exception | Handling |
 |----------|-----------|----------|
-| IMAP connection lost | `ImapProtocolException` | Propagates; host logs fatal |
-| Authentication expired | `AuthenticationException` | Propagates; host logs fatal |
-| Folder not found | `ImapProtocolException` | Propagates |
-| Search syntax error | `ImapProtocolException` | Propagates |
-| Message fetch failure | `ImapProtocolException` | Propagates |
-| Date parsing (old code) | `ArgumentNullException` | **Fixed** — now uses `email.Date.DateTime` |
-| Regex timeout | `RegexMatchTimeoutException` | Propagates |
+| IMAP connection lost | `ImapProtocolException` | Logged, session re-established, retrieval retried |
+| Connection timed out | `IOException` | Logged, session re-established, retrieval retried |
+| Socket failure | `SocketException` | Logged, session re-established, retrieval retried |
+| Stale or unauthenticated session | `ServiceNotConnectedException`, `ServiceNotAuthenticatedException` | Logged, session re-established, retrieval retried |
+| Retrieval fails on the final attempt | Recoverable exception | Propagates; host logs fatal |
+| Authentication rejected during retry | `AuthenticationException` | Propagates; host logs fatal |
+| Subject does not match | None | Message skipped |
+| HTML body has no URL marker | None | Unchanged body returned |
 
 ## Logging
 
@@ -152,8 +174,8 @@ private string ExtractConfirmationUrlFromEmail(MimeMessage email)
 
 1. **In-memory duplicate suppression** — Resets on restart
 2. **No UID tracking** — Relies on timestamp comparison only
-3. **Single folder** — Only searches `INBOX`
-4. **No pagination** — Fetches all matching UIDs at once
-5. **Brittle subject match** — Exact string; Netflix could change subject
-6. **Brittle URL regex** — Depends on specific token pattern in URL
-7. **No retry** — Transient IMAP failures crash process
+3. **Single folder** — Only reads `INBOX`
+4. **Full-body fetch** — Retrieves the whole message for every inspected index
+5. **Brittle subject match** — Exact string; Netflix could change the subject
+6. **Brittle URL regex** — Depends on a specific token pattern in the URL
+7. **Immediate retries** — Recovery retries have no delay or backoff, so a persistently failing server is contacted three times in quick succession

@@ -124,7 +124,8 @@ netflix-household-confirmator/
 | `IHouseholdConfirmator.cs` | Orchestrator interface |
 | `HouseholdConfirmator.cs` | Orchestrator implementation — login, poll, confirm, logout |
 | `Processors/IEmailProcessor.cs` | IMAP adapter interface |
-| `Processors/EmailProcessor.cs` | IMAP adapter — MailKit implementation |
+| `Processors/EmailProcessor.cs` | IMAP adapter — MailKit implementation, including session recovery |
+| `Processors/ImapFailurePolicy.cs` | Classifies IMAP failures as recoverable or non-recoverable |
 | `Processors/INetflixProcessor.cs` | Browser automation adapter interface |
 | `Processors/NetflixProcessor.cs` | Browser automation adapter — NuciWeb/Selenium implementation |
 

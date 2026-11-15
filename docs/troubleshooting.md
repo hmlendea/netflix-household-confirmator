@@ -149,12 +149,12 @@ options.AddArgument("--window-size=1920,1080");
 
 ### IMAP Timeout During Polling
 
-**Symptom:** `ImapCommandException` or timeout in `GetHouseholdConfirmationUrl`
+**Symptom:** `ImapCommandException` or repeated timeout in `GetHouseholdConfirmationUrl`
 
 **Mitigation:**
 - Increase `imapSettings.maxEmailAge` to reduce search scope
 - Check network stability to IMAP server
-- Consider adding retry logic (not currently implemented)
+- Transient timeouts are retried up to three times automatically; if they persist, check the upstream mail service
 
 ### Netflix Login Required
 
