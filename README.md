@@ -235,15 +235,7 @@ The [Security Scan workflow](.github/workflows/security.yml) runs CodeQL analysi
 
 ### Release
 
-The repository includes `release.sh`, which delegates to the upstream deployment script used by the project maintainer.
-
-```bash
-bash ./release.sh 1.1.0
-```
-
-This script downloads and executes an external release helper from `https://raw.githubusercontent.com/hmlendea/deployment-scripts/master/release/dotnet/10.0.sh`.
-
-**Note:** Piping into `bash` is an intensely controversial topic. Please review any external scripts before running them in your environment!
+Release artefacts are built by the [GitHub Release workflow](.github/workflows/github-release.yml) and published as release assets whenever a GitHub release is published.
 
 ### Dependencies
 
@@ -273,7 +265,7 @@ This script downloads and executes an external release helper from `https://raw.
 |----------|---------|--------------|
 | [ .NET ](https://github.com/hmlendea/netflix-household-confirmator/blob/master/.github/workflows/dotnet.yml) | Continuous integration | Restores dependencies, compiles the solution, and runs the test suites on pushes and pull requests targeting `master` |
 | [ Security Scan ](https://github.com/hmlendea/netflix-household-confirmator/blob/master/.github/workflows/security.yml) | Automated security scanning | Runs CodeQL analysis and checks NuGet dependencies for known vulnerabilities on pushes, pull requests targeting `master`, and a weekly schedule |
-| [ GitHub Release ](https://github.com/hmlendea/netflix-household-confirmator/blob/master/.github/workflows/github-release.yml) | Release packaging and publication | On a published GitHub release, determines the .NET version, builds self-contained artefacts through the maintainer's release helper, and uploads the release assets |
+| [ GitHub Release ](https://github.com/hmlendea/netflix-household-confirmator/blob/master/.github/workflows/github-release.yml) | Release packaging and publication | On a published GitHub release, determines the .NET version, builds self-contained artefacts, and uploads the release assets |
 
 ## 🗂️ Project Structure
 

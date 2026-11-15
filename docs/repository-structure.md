@@ -9,7 +9,6 @@ netflix-household-confirmator/
 ├── NetflixHouseholdConfirmator.slnx   # Solution file
 ├── PRIVACY.md                         # Privacy and personal data handling
 ├── README.md                          # User-facing documentation
-├── release.sh                         # Release script
 ├── SECURITY.md                        # Security policy
 ├── docs/                              # Detailed implementation documentation
 │   ├── INDEX.md                       # Master index and navigation
