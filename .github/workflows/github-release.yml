@@ -57,6 +57,6 @@ jobs:
     - name: Publish the release assets
       uses: softprops/action-gh-release@v2
       with:
-        files: netflix-household-confirmator_*
+        files: NetflixHouseholdConfirmator/bin/Release/netflix-household-confirmator_*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
