@@ -131,7 +131,7 @@ Triggered on published GitHub releases:
 
 1. Extracts the .NET version from `NetflixHouseholdConfirmator/NetflixHouseholdConfirmator.csproj`
 2. Sets up .NET and builds self-contained release artefacts
-3. Uploads `netflix-household-confirmator_*` as release assets through `softprops/action-gh-release@v2`
+3. Uploads `NetflixHouseholdConfirmator/bin/Release/netflix-household-confirmator_*` as release assets through `softprops/action-gh-release@v2`
 
 ### NuGet Release (`.github/workflows/nuget-release.yml`)
 
