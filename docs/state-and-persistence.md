@@ -101,7 +101,7 @@ Exception or Ctrl+C
 
 ## Duplicate Suppression
 
-**Mechanism:** Offset-bearing instant comparison in `EmailProcessor`
+**Mechanism:** Offset-bearing instant comparison in `EmailProcessor`, with URL extraction delegated to `ConfirmationUrlExtractor`
 
 ```csharp
 private DateTimeOffset lastConfirmationEmailDateTime = DateTimeOffset.Now;

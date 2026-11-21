@@ -44,11 +44,12 @@ NetflixHouseholdConfirmator/           # Main executable project
 │   ├── HouseholdConfirmator.cs        # Orchestrator
 │   ├── IHouseholdConfirmator.cs       # Orchestrator interface
 │   └── Processors/
+│       ├── ConfirmationUrlExtractor.cs # Confirmation URL extraction and HTML-decoding
 │       ├── EmailProcessor.cs          # IMAP adapter
 │       ├── IEmailProcessor.cs         # IMAP adapter interface
+│       ├── ImapFailurePolicy.cs       # IMAP failure classification
 │       ├── NetflixProcessor.cs        # Browser automation adapter
-│       ├── INetflixProcessor.cs       # Browser automation adapter interface
-│       └── INetflixProcessor.cs
+│       └── INetflixProcessor.cs       # Browser automation adapter interface
 NetflixHouseholdConfirmator.UnitTests/ # Unit tests (NUnit + Moq)
 NetflixHouseholdConfirmator.IntegrationTests/ # Integration tests (mock-based composition)
 docs/                                  # Detailed documentation

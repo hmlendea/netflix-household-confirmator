@@ -53,11 +53,12 @@ netflix-household-confirmator/
 │       ├── HouseholdConfirmator.cs    # Orchestrator
 │       ├── IHouseholdConfirmator.cs   # Orchestrator interface
 │       └── Processors/                # Integration adapters
+│           ├── ConfirmationUrlExtractor.cs  # Confirmation URL extraction and HTML-decoding
 │           ├── EmailProcessor.cs      # IMAP adapter
 │           ├── IEmailProcessor.cs     # IMAP adapter interface
+│           ├── ImapFailurePolicy.cs   # IMAP failure classification
 │           ├── NetflixProcessor.cs    # Browser automation adapter
 │           ├── INetflixProcessor.cs   # Browser automation adapter interface
-│           └── INetflixProcessor.cs
 ├── NetflixHouseholdConfirmator.UnitTests/  # Unit tests
 │   ├── NetflixHouseholdConfirmator.UnitTests.csproj
 │   ├── Configuration/
@@ -69,7 +70,9 @@ netflix-household-confirmator/
 │   └── Service/
 │       ├── HouseholdConfirmatorTests.cs
 │       └── Processors/
+│           ├── ConfirmationUrlExtractorTests.cs
 │           ├── EmailProcessorTests.cs
+│           ├── EmailRecoveryPolicyTests.cs
 │           └── NetflixProcessorTests.cs
 └── NetflixHouseholdConfirmator.IntegrationTests/  # Integration tests
     ├── NetflixHouseholdConfirmator.IntegrationTests.csproj
@@ -124,6 +127,7 @@ netflix-household-confirmator/
 | `HouseholdConfirmator.cs` | Orchestrator implementation — login, poll, confirm, logout |
 | `Processors/IEmailProcessor.cs` | IMAP adapter interface |
 | `Processors/EmailProcessor.cs` | IMAP adapter — MailKit implementation, including session recovery |
+| `Processors/ConfirmationUrlExtractor.cs` | Extracts and HTML-decodes the confirmation URL from an email's HTML body |
 | `Processors/ImapFailurePolicy.cs` | Classifies IMAP failures as recoverable or non-recoverable |
 | `Processors/INetflixProcessor.cs` | Browser automation adapter interface |
 | `Processors/NetflixProcessor.cs` | Browser automation adapter — NuciWeb/Selenium implementation |
@@ -214,7 +218,7 @@ docs/
 | Methods | PascalCase | `GetHouseholdConfirmationUrl` |
 | Properties | PascalCase | `PageLoadTimeout` |
 | Private fields | camelCase | `lastConfirmationEmailDateTime` |
-| Constants | PascalCase | `ConfirmationUrlPattern` |
+| Constants | PascalCase | `HouseholdUpdateEmailSubject` |
 | Test classes | PascalCase with `Tests` suffix | `EmailProcessorTests` |
 | Test methods | `Given...When...Then...` | `GivenANewConfirmationEmail_WhenListening_ThenTheBrowserHandlesTheCurrentPageState` |
 | Documentation files | kebab-case | `repository-structure.md` |

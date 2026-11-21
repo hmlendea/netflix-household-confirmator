@@ -103,16 +103,34 @@ private static string ConfirmationUrlReplacement => "$1";
 
 ### Extraction Method
 ```csharp
-private static string ExtractConfirmationUrlFromEmail(MimeMessage email)
-    => Regex.Replace(
-        email.HtmlBody.Replace(Environment.NewLine, string.Empty),
+public static string Extract(string htmlBody)
+{
+    string normalisedBody = htmlBody.Replace(Environment.NewLine, string.Empty);
+    string extractedUrl = Regex.Replace(
+        normalisedBody,
         ConfirmationUrlPattern,
         ConfirmationUrlReplacement);
+
+    if (string.Equals(extractedUrl, normalisedBody, StringComparison.Ordinal))
+    {
+        return normalisedBody;
+    }
+
+    return WebUtility.HtmlDecode(extractedUrl);
+}
 ```
 
+- Lives in `ConfirmationUrlExtractor`; `EmailProcessor.ExtractConfirmationUrlFromEmail()` delegates to it
 - Processes the HTML body with `Environment.NewLine` removed
+- HTML-decodes the matched URL, since the email's `href` value is HTML-escaped (`&amp;`)
 - Returns the matched URL, or the unchanged HTML body when the pattern does not match
 - No validation that the result is a usable Netflix URL
+
+### HTML Escaping
+
+- Netflix serialises the `href` query separators as `&amp;`, which is the correct HTML source form
+- Without decoding, Selenium receives `&amp;g`, `&amp;lnktrk`, `&amp;operation`, `&amp;lkid`, so the `operation=update` parameter is lost and the confirmation page never renders its action button
+- Decoding yields `https://www.netflix.com/account/update-primary-location?nftoken=…&g=…&lnktrk=EVO&operation=update&lkid=UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA`
 
 ## Return Values
 
@@ -156,7 +174,7 @@ private static string ExtractConfirmationUrlFromEmail(MimeMessage email)
 
 ## Testing Behaviour
 
-**Unit Tests:** Minimal (construction only)
+**Unit Tests:** `ConfirmationUrlExtractorTests` covers pattern matching, HTML-decoding, `operation=update` survival, newline removal, and the unchanged-body case; `EmailProcessorTests` covers construction
 
 **Integration Tests:** Via mocked `IEmailProcessor` in `HouseholdConfirmationIntegrationTests`:
 - `GivenANewConfirmationEmail_WhenListening_ThenTheBrowserHandlesTheCurrentPageState`
@@ -179,3 +197,7 @@ private static string ExtractConfirmationUrlFromEmail(MimeMessage email)
 5. **Brittle subject match** — Exact string; Netflix could change the subject
 6. **Brittle URL regex** — Depends on a specific token pattern in the URL
 7. **Immediate retries** — Recovery retries have no delay or backoff, so a persistently failing server is contacted three times in quick succession
+
+## Revision Note
+
+The extraction path HTML-decodes the captured URL. Earlier revisions passed the escaped `&amp;` form to the browser, which produced a confirmation request without a valid `operation` parameter and made `set-primary-location-action` unavailable.

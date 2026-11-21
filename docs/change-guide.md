@@ -29,7 +29,7 @@
 
 ### Adding a New IMAP Header/Field
 
-1. **Modify `EmailProcessor.GetHouseholdConfirmationUrl()`** or `ExtractConfirmationUrlFromEmail()`
+1. **Modify `EmailProcessor.GetHouseholdConfirmationUrl()`** or `ConfirmationUrlExtractor.Extract()`
 2. **Use `email.Headers["Header-Name"]`** for custom headers
 3. **Prefer standard MIME properties** (`email.Date`, `email.From`, `email.Subject`)
 4. **Add unit test** for new extraction logic

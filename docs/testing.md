@@ -38,7 +38,9 @@ NetflixHouseholdConfirmator.UnitTests/
 └── Service/
     ├── HouseholdConfirmatorTests.cs
     └── Processors/
+        ├── ConfirmationUrlExtractorTests.cs
         ├── EmailProcessorTests.cs
+        ├── EmailRecoveryPolicyTests.cs
         └── NetflixProcessorTests.cs
 ```
 
@@ -102,11 +104,11 @@ Examples:
 | LogIn connects and authenticates | — | — |
 | LogOut disconnects and disposes | — | — |
 | GetHouseholdConfirmationUrl filters by subject | — | — |
-| GetHouseholdConfirmationUrl extracts URL via regex | — | — |
+| Confirmation URL extracted and HTML-decoded | ConfirmationUrlExtractorTests | — |
 | IMAP failure classification (recoverable vs non-recoverable) | EmailRecoveryPolicyTests | — |
 | Duplicate suppression by offset-bearing Date | — | — |
 
-**Note:** EmailProcessor unit tests are minimal (construction only). Integration tests cover behaviour via mocked `IEmailProcessor`.
+**Note:** `EmailProcessor` unit tests cover construction only; extraction is covered by `ConfirmationUrlExtractorTests`, and mailbox behaviour by the integration tests via a mocked `IEmailProcessor`.
 
 ### NetflixProcessor (Browser Adapter)
 

@@ -170,6 +170,8 @@ Paths:
 - [NetflixHouseholdConfirmator/Service/IHouseholdConfirmator.cs](NetflixHouseholdConfirmator/Service/IHouseholdConfirmator.cs)
 - [NetflixHouseholdConfirmator/Service/Processors/EmailProcessor.cs](NetflixHouseholdConfirmator/Service/Processors/EmailProcessor.cs)
 - [NetflixHouseholdConfirmator/Service/Processors/IEmailProcessor.cs](NetflixHouseholdConfirmator/Service/Processors/IEmailProcessor.cs)
+- [NetflixHouseholdConfirmator/Service/Processors/ConfirmationUrlExtractor.cs](NetflixHouseholdConfirmator/Service/Processors/ConfirmationUrlExtractor.cs)
+- [NetflixHouseholdConfirmator/Service/Processors/ImapFailurePolicy.cs](NetflixHouseholdConfirmator/Service/Processors/ImapFailurePolicy.cs)
 - [NetflixHouseholdConfirmator/Service/Processors/NetflixProcessor.cs](NetflixHouseholdConfirmator/Service/Processors/NetflixProcessor.cs)
 - [NetflixHouseholdConfirmator/Service/Processors/INetflixProcessor.cs](NetflixHouseholdConfirmator/Service/Processors/INetflixProcessor.cs)
 
@@ -290,7 +292,7 @@ sequenceDiagram
     C->>E: LogOut()
 ```
 
-`EmailProcessor` scans from the newest inbox message backwards and stops when message age exceeds `MaxEmailAge`. It requires a case-sensitive subject containing `How to update your Netflix Household`, then reads the offset-bearing MIME `Date` value and requires that instant to be newer than its session-local `lastConfirmationEmailDateTime`. Comparing offset-bearing instants prevents a non-UTC `Date` header from shifting the recorded instant into the future and suppressing later messages. Recoverable retrieval failures — I/O, socket, timeout, protocol, and stale or unauthenticated session errors — are logged, re-established through `LogIn`, and retried up to three immediate attempts before propagating. The HTML body is normalised by removing `Environment.NewLine`, then passed through the `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA` URL pattern; when the pattern does not match, the unchanged HTML body is returned as the fallback. The orchestration layer forwards every non-null return value, including empty or whitespace strings, because the current contract tests treat any non-null value as a request.
+`EmailProcessor` scans from the newest inbox message backwards and stops when message age exceeds `MaxEmailAge`. It requires a case-sensitive subject containing `How to update your Netflix Household`, then reads the offset-bearing MIME `Date` value and requires that instant to be newer than its session-local `lastConfirmationEmailDateTime`. Comparing offset-bearing instants prevents a non-UTC `Date` header from shifting the recorded instant into the future and suppressing later messages. Recoverable retrieval failures — I/O, socket, timeout, protocol, and stale or unauthenticated session errors — are logged, re-established through `LogIn`, and retried up to three immediate attempts before propagating. The HTML body is normalised by removing `Environment.NewLine`, then passed through the `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA` URL pattern in `ConfirmationUrlExtractor`, which HTML-decodes the captured URL before returning it; when the pattern does not match, the unchanged HTML body is returned as the fallback. Without decoding, the escaped `&amp;` separators would hide the `operation=update` parameter from Netflix and the confirmation page would never render its action button. The orchestration layer forwards every non-null return value, including empty or whitespace strings, because the current contract tests treat any non-null value as a request.
 
 ## ⚙️ Domain-Specific Concerns
 
@@ -379,14 +381,14 @@ The deployment unit is a single .NET 10 console executable with `appsettings.jso
 | Contract | Owner | Invariant | Verification | Change Policy |
 |----------|-------|-----------|--------------|---------------|
 | Configuration section names | `Program` and typed settings | `BotSettings`, `DebugSettings`, `ImapSettings`, and `NuciLoggerSettings` bind from matching JSON sections | Configuration tests and startup execution | Preserve section and property names or update deployment documentation and tests together |
-| Email subject and URL marker | `EmailProcessor` | Matching remains case-sensitive and requires the household subject text and `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA` URL marker | `EmailProcessorTests` | Coordinate changes with the received Netflix email format |
+| Email subject and URL marker | `EmailProcessor` and `ConfirmationUrlExtractor` | Matching remains case-sensitive and requires the household subject text and `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA` URL marker, and the captured URL is returned HTML-decoded | `EmailProcessorTests` and `ConfirmationUrlExtractorTests` | Coordinate changes with the received Netflix email format |
 | Netflix selectors | `NetflixProcessor` | Confirmation and location-details XPath selectors identify the expected page controls | `NetflixProcessorTests` and compatible browser verification | Update selectors and tests together when Netflix markup changes |
 | Processor interfaces | Service layer | Orchestration calls login, polling, confirmation, and logout in the current order | `HouseholdConfirmatorTests` | Preserve method signatures and lifecycle order for adapters and tests |
 | Runtime resource lifecycle | `Program` and `HouseholdConfirmator` | IMAP logout and WebDriver quit occur at their current ownership boundaries | Orchestration tests and manual shutdown verification | Changes require explicit cleanup tests |
 
 ## ✅ Testing And Verification
 
-The repository contains separate NUnit unit-test and integration-test projects referencing the executable project. Moq substitutes isolate IMAP, browser, and logger boundaries. Integration tests compose the real orchestrator and processors with real MIME messages and the shipped configuration. Tests cover configuration and logging values, orchestration ordering and cleanup, IMAP connection and message selection, URL extraction, browser selector behaviour, cross-component failure propagation, and resource cleanup. They do not verify live IMAP access, real Netflix markup, a real browser driver, or process signal handling.
+The repository contains separate NUnit unit-test and integration-test projects referencing the executable project. Moq substitutes isolate IMAP, browser, and logger boundaries. Integration tests compose the real orchestrator and processors with real MIME messages and the shipped configuration. Tests cover configuration and logging values, orchestration ordering and cleanup, IMAP connection and message selection, confirmation URL extraction and HTML-decoding, browser selector behaviour, cross-component failure propagation, and resource cleanup. They do not verify live IMAP access, real Netflix markup, a real browser driver, or process signal handling.
 
 Execute the principal automated verification with:
 

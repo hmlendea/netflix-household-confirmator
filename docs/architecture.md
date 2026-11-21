@@ -66,7 +66,7 @@ This document elaborates on the root [ARCHITECTURE.md](../ARCHITECTURE.md) with 
 - `LogOut()`: Disconnects and disposes the `ImapClient`
 - `GetHouseholdConfirmationUrl()`: Retrieves recent emails, filters by subject, extracts URL from newest qualifying message
 - `RetrieveRecentEmails()`: Opens inbox read-only, iterates from newest to oldest, stops at first message older than `MaxEmailAge` seconds; retries recoverable failures through `LogIn()`
-- `ExtractConfirmationUrlFromEmail()`: Removes newlines from the HTML body, applies regex to extract URL ending with `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA`
+- `ExtractConfirmationUrlFromEmail()`: Removes newlines from the HTML body and delegates to `ConfirmationUrlExtractor`, which applies the regex and HTML-decodes the captured URL ending with `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA`
 
 **State:**
 - `lastConfirmationEmailDateTime` (private `DateTimeOffset`, initialised to `DateTimeOffset.Now` at construction) — tracks the most recently processed matching email instant for duplicate suppression within the process lifetime
