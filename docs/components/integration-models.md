@@ -107,12 +107,10 @@ private static string ConfirmationUrlPattern
     => ".*(https://[^ ]*UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA).*";
 
 private static string ExtractConfirmationUrlFromEmail(MimeMessage email)
-    => Regex.Replace(
-        email.HtmlBody.Replace(Environment.NewLine, string.Empty),
-        ConfirmationUrlPattern,
-        "$1");
+    => ConfirmationUrlExtractor.Extract(email.HtmlBody);
 ```
 
+- `ConfirmationUrlExtractor.Extract` removes newlines, applies the regex, and HTML-decodes the captured URL
 - Only the HTML body is read; a message without an HTML body raises `NullReferenceException`
 
 ### Error Model

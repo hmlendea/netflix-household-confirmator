@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 using MailKit;
 using MailKit.Net.Imap;
@@ -27,11 +26,6 @@ namespace NetflixHouseholdConfirmator.Service.Processors
         private DateTimeOffset lastConfirmationEmailDateTime = DateTimeOffset.Now;
 
         private static int MaximumRetrievalAttempts => 3;
-
-        private static string ConfirmationUrlPattern
-            => ".*(https://[^ ]*UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA).*";
-
-        private static string ConfirmationUrlReplacement => "$1";
 
         private static string HouseholdUpdateEmailSubject
             => "How to update your Netflix Household";
@@ -164,10 +158,7 @@ namespace NetflixHouseholdConfirmator.Service.Processors
         }
 
         private static string ExtractConfirmationUrlFromEmail(MimeMessage email)
-            => Regex.Replace(
-                email.HtmlBody.Replace(Environment.NewLine, string.Empty),
-                ConfirmationUrlPattern,
-                ConfirmationUrlReplacement);
+            => ConfirmationUrlExtractor.Extract(email.HtmlBody);
 
         private IEnumerable<MimeMessage> RetrieveRecentEmails()
         {

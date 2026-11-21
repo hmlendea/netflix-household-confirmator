@@ -76,7 +76,18 @@
 1. Check logs for `ListenForConfirmationRequests` — email subject logged?
 2. Verify email subject contains "How to update your Netflix Household"
 3. Check email body for `UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA` pattern
-4. Update `ConfirmationUrlPattern` regex in `EmailProcessor.cs`
+4. Update the regex in `ConfirmationUrlExtractor.cs`
+
+### Confirmation Page Shows No Action Button
+
+**Symptoms:** `OpenQA.Selenium.NotFoundException` for `set-primary-location-action`, preceded by a passed element wait.
+
+**Cause:** The confirmation URL reached the browser in its HTML-escaped form (`&amp;`), so the `operation` parameter was dropped and Netflix did not render the update action.
+
+**Checks:**
+1. Confirm `ConfirmationUrlExtractor` HTML-decodes the captured URL
+2. Inspect the logged URL or add a temporary log entry for the extracted value
+3. Verify it contains `&operation=update` once decoded
 
 ### Duplicate Emails Processed
 

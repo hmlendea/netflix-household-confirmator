@@ -307,6 +307,7 @@ HouseholdConfirmator
 |---------|-----------|----------|
 | `HouseholdConfirmator` | `HouseholdConfirmatorTests.cs` | Orchestration logic with mocks |
 | `EmailProcessor` | `EmailProcessorTests.cs` | Construction only |
+| `ConfirmationUrlExtractor` | `ConfirmationUrlExtractorTests.cs` | Regex capture, HTML-decoding, `operation` parameter survival, newline removal, unchanged-body fallback |
 | `NetflixProcessor` | `NetflixProcessorTests.cs` | Browser interactions with mocks |
 
 ### Integration Tests
