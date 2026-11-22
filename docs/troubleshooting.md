@@ -80,7 +80,7 @@
 
 ### Confirmation Page Shows No Action Button
 
-**Symptoms:** `OpenQA.Selenium.NotFoundException` for `set-primary-location-action`, preceded by a passed element wait.
+**Symptoms:** `OpenQA.Selenium.NotFoundException` for `set-primary-location-action` or `update-household-confirm-cta`, preceded by a passed element wait.
 
 **Cause:** The confirmation URL reached the browser in its HTML-escaped form (`&amp;`), so the `operation` parameter was dropped and Netflix did not render the update action.
 

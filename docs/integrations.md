@@ -88,7 +88,7 @@ Confirm household update via Netflix website.
 
 | Element | Selector | Attribute |
 |---------|----------|-----------|
-| Confirm Button | `//button[@data-uia='set-primary-location-action']` | `data-uia` |
+| Confirm Button | `//*[@data-uia='update-household-confirm-cta' or @data-uia='set-primary-location-action']` | `data-uia` |
 | Location Details | `//div[@data-uia='location-details']` | `data-uia` |
 
 ### Dependencies

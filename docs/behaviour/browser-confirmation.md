@@ -21,7 +21,8 @@ webProcessor.GoToUrl(confirmationUrl);
 
 ### 2. Wait for Key Elements
 ```csharp
-string confirmButtonSelector = Select.ByXPath(@"//button[@data-uia='set-primary-location-action']");
+string confirmButtonSelector = Select.ByXPath(
+    @"//*[@data-uia='update-household-confirm-cta' or @data-uia='set-primary-location-action']");
 string locationDetailsSelector = Select.ByXPath(@"//div[@data-uia='location-details']");
 
 webProcessor.WaitForAnyElementToBeVisible(confirmButtonSelector, locationDetailsSelector);
@@ -62,7 +63,7 @@ if (!webProcessor.IsElementVisible(locationDetailsSelector))
 
 | Selector | XPath | Purpose |
 |----------|-------|---------|
-| `confirmButtonSelector` | `//button[@data-uia='set-primary-location-action']` | Primary action button |
+| `confirmButtonSelector` | `//*[@data-uia='update-household-confirm-cta' or @data-uia='set-primary-location-action']` | Primary action button |
 | `locationDetailsSelector` | `//div[@data-uia='location-details']` | Confirmed state indicator |
 
 **Source:** Netflix household update confirmation page DOM attributes (`data-uia`)

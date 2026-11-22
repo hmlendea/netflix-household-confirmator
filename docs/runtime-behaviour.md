@@ -50,7 +50,7 @@ This extracts a contiguous HTTPS value ending at the marker, provided the surrou
 `NetflixProcessor` performs these operations in order:
 
 1. Navigate to the supplied string.
-2. Wait for either the confirmation button XPath `//button[@data-uia='set-primary-location-action']` or location-details XPath `//div[@data-uia='location-details']` to become visible.
+2. Wait for either the confirmation button XPath `//*[@data-uia='update-household-confirm-cta' or @data-uia='set-primary-location-action']` or location-details XPath `//div[@data-uia='location-details']` to become visible.
 3. Query location-details visibility.
 4. If location details are not visible, click the confirmation button and wait 5,000 milliseconds.
 5. If location details are visible, skip clicking and finish.

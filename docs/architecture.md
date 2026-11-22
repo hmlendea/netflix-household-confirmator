@@ -104,7 +104,7 @@ This document elaborates on the root [ARCHITECTURE.md](../ARCHITECTURE.md) with 
 **Confirmation Algorithm:**
 1. Navigate to supplied URL string
 2. Wait for either selector to become visible:
-   - Confirm button: `//button[@data-uia='set-primary-location-action']`
+   - Confirm button: `//*[@data-uia='update-household-confirm-cta' or @data-uia='set-primary-location-action']`
    - Location details: `//div[@data-uia='location-details']`
 3. Check if location details are visible
 4. If **not** visible: click confirm button, wait 5000ms
@@ -118,7 +118,7 @@ This document elaborates on the root [ARCHITECTURE.md](../ARCHITECTURE.md) with 
 - Success log means only "method reached final log statement", not "Netflix accepted the request"
 
 **Selectors (Hardcoded):**
-- Confirm button: XPath `//button[@data-uia='set-primary-location-action']`
+- Confirm button: XPath `//*[@data-uia='update-household-confirm-cta' or @data-uia='set-primary-location-action']`
 - Location details: XPath `//div[@data-uia='location-details']`
 
 **Dependencies:** `IWebProcessor`, `ILogger`

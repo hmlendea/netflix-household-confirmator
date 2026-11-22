@@ -127,7 +127,7 @@ public interface INetflixProcessor
    - `webProcessor.Wait(5000)` — wait for confirmation to process
 
 **Selectors:**
-- `ConfirmButtonSelector` = `//button[@data-uia='set-primary-location-action']`
+- `ConfirmButtonSelector` = `//*[@data-uia='update-household-confirm-cta' or @data-uia='set-primary-location-action']`
 - `LocationDetailsSelector` = `//div[@data-uia='location-details']`
 
 **Logging:** `MyOperation.HouseholdConfirmation`

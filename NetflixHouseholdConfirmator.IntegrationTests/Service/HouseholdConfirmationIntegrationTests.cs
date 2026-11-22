@@ -30,7 +30,8 @@ namespace NetflixHouseholdConfirmator.IntegrationTests.Service
             => "https://test.nucilandia.ro/UPDATE_HOUSEHOLD_REQUESTED_OTP_CTA";
 
         private static string ConfirmButtonSelector
-            => Select.ByXPath("//button[@data-uia='set-primary-location-action']");
+            => Select.ByXPath(
+                "//*[@data-uia='update-household-confirm-cta' or @data-uia='set-primary-location-action']");
 
         private static string DateReceivedHeaderName => "DateReceived";
 

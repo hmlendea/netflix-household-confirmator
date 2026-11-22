@@ -222,7 +222,8 @@ public void ConfirmHousehold(string confirmationUrl)
     {
         webProcessor.GoToUrl(confirmationUrl);
 
-        string confirmButtonSelector = Select.ByXPath(@"//button[@data-uia='set-primary-location-action']");
+        string confirmButtonSelector = Select.ByXPath(
+            @"//*[@data-uia='update-household-confirm-cta' or @data-uia='set-primary-location-action']");
         string locationDetailsSelector = Select.ByXPath(@"//div[@data-uia='location-details']");
 
         webProcessor.WaitForAnyElementToBeVisible(confirmButtonSelector, locationDetailsSelector);
