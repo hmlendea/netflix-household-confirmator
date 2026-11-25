@@ -2,7 +2,7 @@
 
 ## Logging Framework
 
-The application uses **NuciLog** (v1.2.1) with **NuciLog.Core** (v3.1.0) for structured logging. NuciLog provides:
+The application uses **NuciLog** (v1.2.4) with **NuciLog.Core** (v3.1.2) for structured logging. NuciLog provides:
 - Operation-based logging with status tracking (Started, InProgress, Success, Failure)
 - Structured `LogInfo` key-value pairs
 - Multiple output sinks (console, file)

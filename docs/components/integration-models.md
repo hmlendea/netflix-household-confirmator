@@ -7,7 +7,7 @@ Integration models are the adapters that connect the application to external sys
 ## IMAP Integration (EmailProcessor)
 
 ### Library
-- **MailKit 4.18.1** — IMAP client
+- **MailKit 5.0.0** — IMAP client
 - **MimeKit** — MIME message parsing (transitive via MailKit)
 
 ### Connection Model
@@ -143,9 +143,9 @@ Recoverable failures trigger an immediate reconnect and retrieval retry, up to t
 ## Browser Automation Integration (NetflixProcessor)
 
 ### Library Stack
-- **NuciWeb 4.0.0** — Abstraction layer
-- **NuciWeb.Automation 1.0.0** — Automation interfaces
-- **NuciWeb.Automation.Selenium 1.0.2** — Selenium implementation
+- **NuciWeb 4.1.0** — Abstraction layer
+- **NuciWeb.Automation 1.0.1** — Automation interfaces
+- **NuciWeb.Automation.Selenium 1.0.5** — Selenium implementation
 - **Selenium.WebDriver** — Browser driver (transitive)
 
 ### Abstraction Layer

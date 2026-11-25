@@ -6,28 +6,29 @@
 
 | Package | Version | Purpose | License |
 |---------|---------|---------|---------|
-| `MailKit` | 4.18.1 | IMAP client for email retrieval | MIT |
+| `MailKit` | 5.0.0 | IMAP client for email retrieval | MIT |
 | `MailKit.Net` | 2.0.0 | Network layer for MailKit | MIT |
-| `Microsoft.Extensions.Configuration` | 10.0.12 | Configuration abstraction | MIT |
-| `Microsoft.Extensions.Configuration.Binder` | 10.0.12 | POCO binding from configuration | MIT |
-| `Microsoft.Extensions.Configuration.Json` | 10.0.12 | JSON configuration provider | MIT |
-| `Microsoft.Extensions.DependencyInjection` | 10.0.12 | DI container | MIT |
-| `NuciLog` | 1.2.1 | Structured logging framework | MIT |
-| `NuciLog.Core` | 3.1.0 | Core logging abstractions | MIT |
-| `NuciWeb` | 4.0.0 | Web automation abstractions | MIT |
-| `NuciWeb.Automation` | 1.0.0 | Browser automation interfaces | MIT |
-| `NuciWeb.Automation.Selenium` | 1.0.2 | Selenium implementation of automation | MIT |
+| `Microsoft.Extensions.Configuration` | 11.0.0 | Configuration abstraction | MIT |
+| `Microsoft.Extensions.Configuration.Binder` | 11.0.0 | POCO binding from configuration | MIT |
+| `Microsoft.Extensions.Configuration.Json` | 11.0.0 | JSON configuration provider | MIT |
+| `Microsoft.Extensions.DependencyInjection` | 11.0.0 | DI container | MIT |
+| `NuciLog` | 1.2.4 | Structured logging framework | MIT |
+| `NuciLog.Core` | 3.1.2 | Core logging abstractions | MIT |
+| `NuciWeb` | 4.1.0 | Web automation abstractions | MIT |
+| `NuciWeb.Automation` | 1.0.1 | Browser automation interfaces | MIT |
+| `NuciWeb.Automation.Selenium` | 1.0.5 | Selenium implementation of automation | MIT |
 
 ### Test Dependencies (UnitTests & IntegrationTests)
 
 | Package | Version | Purpose | License |
 |---------|---------|---------|---------|
-| `coverlet.collector` | 10.1.0 | Code coverage collection | MIT |
-| `Microsoft.NET.Test.Sdk` | 18.10.1 | Test platform SDK | MIT |
+| `coverlet.collector` | 10.1.1 | Code coverage collection | MIT |
+| `Microsoft.NET.Test.Sdk` | 18.12.0 | Test platform SDK | MIT |
 | `Moq` | 4.21.0 | Mocking framework | BSD-3-Clause |
 | `NUnit` | 5.0.0 | Test framework | MIT |
 | `NUnit.Analyzers` | 4.15.0 | Roslyn analyzers for NUnit | MIT |
-| `NUnit3TestAdapter` | 6.3.0 | NUnit test adapter for VS/Test SDK | MIT |
+| `NUnit3TestAdapter` | 6.3.1 | NUnit test adapter for VS/Test SDK | MIT |
+| `TngTech.ArchUnitNET.NUnit` | 0.13.5 | Architectural dependency rule enforcement | MIT |
 
 ### Transitive Dependencies (Key)
 
@@ -79,13 +80,13 @@ NetflixHouseholdConfirmator.IntegrationTests
 ```mermaid
 flowchart TD
     subgraph "External Packages"
-        MailKit[MailKit 4.18.1]
+        MailKit[MailKit 5.0.0]
         MimeKit[MimeKit]
-        NuciLog[NuciLog 1.2.1]
-        NuciLogCore[NuciLog.Core 3.1.0]
-        NuciWeb[NuciWeb 4.0.0]
-        NuciWebAuto[NuciWeb.Automation 1.0.0]
-        NuciWebSelenium[NuciWeb.Automation.Selenium 1.0.2]
+        NuciLog[NuciLog 1.2.4]
+        NuciLogCore[NuciLog.Core 3.1.2]
+        NuciWeb[NuciWeb 4.1.0]
+        NuciWebAuto[NuciWeb.Automation 1.0.1]
+        NuciWebSelenium[NuciWeb.Automation.Selenium 1.0.5]
         MSConfig[Microsoft.Extensions.Configuration*]
         MSDI[Microsoft.Extensions.DependencyInjection]
         Selenium[OpenQA.Selenium / Selenium.WebDriver]
@@ -148,9 +149,9 @@ flowchart TD
 | Component | Target Framework | Notes |
 |-----------|------------------|-------|
 | All projects | `net10.0` | .NET 10.0 |
-| MailKit | 4.18.1 | Compatible with .NET 10 |
-| NuciLog | 1.2.1 | Compatible with .NET 10 |
-| NuciWeb | 4.0.0 | Compatible with .NET 10 |
+| MailKit | 5.0.0 | Compatible with .NET 10 |
+| NuciLog | 1.2.4 | Compatible with .NET 10 |
+| NuciWeb | 4.1.0 | Compatible with .NET 10 |
 | Selenium | Via NuciWeb | Version determined by NuciWeb.Automation.Selenium |
 
 ## License Compliance
