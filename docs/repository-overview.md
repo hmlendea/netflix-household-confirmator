@@ -78,7 +78,7 @@ docs/                                  # Detailed documentation
 | Runtime | .NET 10.0 |
 | DI | Microsoft.Extensions.DependencyInjection |
 | Configuration | Microsoft.Extensions.Configuration (JSON) |
-| IMAP | MailKit 4.16.0 |
+| IMAP | MailKit 5.0.0 |
 | Browser automation | NuciWeb (Selenium wrapper) |
 | Logging | NuciLog |
 | Testing | NUnit, Moq, Microsoft.NET.Test.Sdk, Coverlet |

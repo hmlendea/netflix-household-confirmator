@@ -241,23 +241,24 @@ Release artefacts are built by the [GitHub Release workflow](.github/workflows/g
 
 | Package | Version | Scope | Purpose |
 |---------|---------|-------|---------|
-| `coverlet.collector` | `6.0.4` | Development | Collects cross-platform code coverage |
-| `MailKit` | `4.16.0` | Runtime | Retrieves and parses IMAP messages |
+| `coverlet.collector` | `10.1.1` | Development | Collects cross-platform code coverage |
+| `MailKit` | `5.0.0` | Runtime | Retrieves and parses IMAP messages |
 | `MailKit.Net` | `2.0.0` | Runtime | Provides IMAP network support |
-| `Microsoft.Extensions.Configuration` | `10.0.5` | Runtime | Provides configuration abstractions |
-| `Microsoft.Extensions.Configuration.Binder` | `10.0.5` | Runtime | Binds configuration sections to typed settings |
-| `Microsoft.Extensions.Configuration.Json` | `10.0.5` | Runtime | Loads JSON configuration |
-| `Microsoft.Extensions.DependencyInjection` | `10.0.5` | Runtime | Constructs application services |
-| `Microsoft.NET.Test.Sdk` | `18.0.1` | Development | Hosts and discovers .NET tests |
-| `Moq` | `4.20.72` | Development | Creates isolated dependency substitutes |
-| `NuciLog` | `1.1.2` | Runtime | Records structured application logs |
-| `NuciLog.Core` | `2.6.0` | Runtime | Provides logging contracts and primitives |
-| `NuciWeb` | `4.0.0` | Runtime | Provides web interaction abstractions |
-| `NuciWeb.Automation` | `1.0.0` | Runtime | Defines browser automation contracts |
-| `NuciWeb.Automation.Selenium` | `1.0.1` | Runtime | Implements browser automation through Selenium |
-| `NUnit` | `4.4.0` | Development | Provides the unit-testing framework |
-| `NUnit.Analyzers` | `4.10.0` | Development | Analyses NUnit test correctness |
-| `NUnit3TestAdapter` | `6.0.0` | Development | Integrates NUnit with the .NET test host |
+| `Microsoft.Extensions.Configuration` | `11.0.0` | Runtime | Provides configuration abstractions |
+| `Microsoft.Extensions.Configuration.Binder` | `11.0.0` | Runtime | Binds configuration sections to typed settings |
+| `Microsoft.Extensions.Configuration.Json` | `11.0.0` | Runtime | Loads JSON configuration |
+| `Microsoft.Extensions.DependencyInjection` | `11.0.0` | Runtime | Constructs application services |
+| `Microsoft.NET.Test.Sdk` | `18.12.0` | Development | Hosts and discovers .NET tests |
+| `Moq` | `4.21.0` | Development | Creates isolated dependency substitutes |
+| `NuciLog` | `1.2.4` | Runtime | Records structured application logs |
+| `NuciLog.Core` | `3.1.2` | Runtime | Provides logging contracts and primitives |
+| `NuciWeb` | `4.1.0` | Runtime | Provides web interaction abstractions |
+| `NuciWeb.Automation` | `1.0.1` | Runtime | Defines browser automation contracts |
+| `NuciWeb.Automation.Selenium` | `1.0.5` | Runtime | Implements browser automation through Selenium |
+| `NUnit` | `5.0.0` | Development | Provides the unit-testing framework |
+| `NUnit.Analyzers` | `4.15.0` | Development | Analyses NUnit test correctness |
+| `NUnit3TestAdapter` | `6.3.1` | Development | Integrates NUnit with the .NET test host |
+| `TngTech.ArchUnitNET.NUnit` | `0.13.5` | Development | Enforces architectural dependency rules in tests |
 
 ## ⚙️ GitHub Actions
 
